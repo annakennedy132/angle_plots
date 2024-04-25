@@ -102,12 +102,6 @@ class AnglePlots:
             if len(self.stim_event_frames) > 0:
                 self.has_stim_events = True
 
-    '''def get_stim_frames(self):
-        self.stim_event_frames = event.get_stim_events(self.stim)
-
-        if len(self.stim_event_frames) > 0:
-            self.has_stim_events = True'''
-
     def draw_global_plots(self, show=False):
 
         self.angles_polar = [angle if not pd.isna(angle) else None for angle in self.angles]
@@ -151,15 +145,11 @@ class AnglePlots:
                                 self.angles_polar, 
                                 bins=36, 
                                 show=show)
-        
-        mean_x = np.nanmean([coord[0] for coord in self.head_coords])
-        mean_y = np.nanmean([coord[1] for coord in self.head_coords])
-        mean_coord = (mean_x, mean_y)
 
         coord_fig, ax = plt.subplots()
         self.figs.append(coord_fig)
         plt.title("Heatmap of All Coords")
-        plots.plot_coords(coord_fig, ax, self.head_coords, "x", "y", mean_coord, gridsize=50, vmin=0, vmax=100, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
+        plots.plot_coords(coord_fig, ax, self.head_coords, "x", "y", gridsize=50, vmin=0, vmax=100, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
     def draw_event_plots(self, show=False):
         
@@ -258,15 +248,10 @@ class AnglePlots:
                         ax.set_title(title)
                     self.figs.append(event_polar_fig)
 
-                    #plot event heatmap with mean coord for event
-                    mean_x = np.nanmean(all_stim_coords)
-                    mean_y = np.nanmean(all_stim_coords)
-                    mean_coord = (mean_x, mean_y)
-
                     event_coord_fig, ax = plt.subplots()
                     self.figs.append(event_coord_fig)
                     plt.title(f"Heatmap of Coords for Stim Event {i}")
-                    plots.plot_coords(event_coord_fig, ax, event_locs, "x", "y", mean_coord, gridsize=50, vmin=0, vmax=50, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
+                    plots.plot_coords(event_coord_fig, ax, event_locs, "x", "y", gridsize=50, vmin=0, vmax=50, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
                     all_event_angles.append(event_angles)
 

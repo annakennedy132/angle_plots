@@ -40,6 +40,10 @@ def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False):
 
     for bar, height in zip(bars, hist_norm):
         bar.set_facecolor(plt.cm.viridis(height))
+
+    ax.set_xticks(np.linspace(0, 2 * np.pi, 8, endpoint=False))  # 8 ticks evenly spaced, excluding the endpoint
+    labels = ['0°', '45°', '90°', '135°', '180°', '-135°', '-90°', '-45°']
+    ax.set_xticklabels(labels)
         
     ax.set_theta_direction(direction)
     ax.set_theta_zero_location(zero)
@@ -47,9 +51,13 @@ def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False):
 
     return fig, ax
 
-def plot_coords(fig, ax, coords, xlabel, ylabel, mean_coord, gridsize, vmin, vmax, xmin, xmax, ymin, ymax, show=False):
+def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xmax, ymin, ymax, show=False):
     x_values = [coord[0] for coord in coords]
     y_values = [coord[1] for coord in coords]
+
+    mean_x = np.nanmean(x_values)
+    mean_y = np.nanmean(y_values)
+    mean_coord = (mean_x, mean_y)
     
     # Calculate the extent of the plot area
     extent = [xmin, xmax, ymin, ymax]
