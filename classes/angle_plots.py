@@ -260,6 +260,7 @@ class AnglePlots:
                     if close:
                         plt.close('all')
 
+
             csv_name = self.base_path + "_escape_stats.csv"
             files.create_csv(event_stats, csv_name)
 
