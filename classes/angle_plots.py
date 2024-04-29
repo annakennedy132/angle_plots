@@ -8,7 +8,7 @@ from utils import files, distance
 
 class AnglePlots:
 
-    def __init__(self, tracking_file, stim_file, video_file, save_figs=False):
+    def __init__(self, tracking_file, save_figs=False):
 
         # Initialise settings
         self.fps = 30
@@ -151,8 +151,8 @@ class AnglePlots:
         plt.title("Heatmap of All Coords")
         plots.plot_coords(coord_fig, ax, self.head_coords, "x", "y", gridsize=50, vmin=0, vmax=100, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
-    if close:
-        plt.close("all")
+        if close:
+            plt.close('all')
 
     def draw_event_plots(self, show=False, close=True):
         
@@ -182,7 +182,7 @@ class AnglePlots:
                     event_locs = self.head_coords[start:end]
                     event_stim = self.stim[start:end]
                     event_distances = self.distances_exit[start:end]
-                    
+
                     #find relevant coords/angles and use to find escape stats
                     pre_stim_coords = self.head_x[:event_t0]
                     stim_coords = self.head_x[event_t0:stim_end]
@@ -237,7 +237,7 @@ class AnglePlots:
                     during_stim_angles = self.angles_polar[event_t0:escape_frame]
                     after_stim_angles = self.angles_polar[return_frame:end]
 
-                    polar_titles = ['Before Stimulus', 'During Time to Escape / Stimulus', 'After Stimulus']
+                    polar_titles = ['Before Stimulus', 'During Time to Escape / Stimulus', 'After Escape / Stimulus']
                     angle_lists = [before_stim_angles, during_stim_angles, after_stim_angles]
 
                     event_polar_fig, axes = plt.subplots(1, 3, figsize=(12, 5), subplot_kw={'projection': 'polar'})
@@ -256,10 +256,10 @@ class AnglePlots:
                     event_angle_df = pd.DataFrame((event_angles, event_locs, event_distances, during_stim_angles, after_stim_angles))
                     self.event_angle_dfs.append(event_angle_df)
                     all_event_angles.append(event_angle_df)
-                    all_event_angles.append(event_angles)
-
+                    
                     if close:
-                        plt.close("all)
+                        plt.close('all')
+
 
             csv_name = self.base_path + "_escape_stats.csv"
             files.create_csv(event_stats, csv_name)
