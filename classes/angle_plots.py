@@ -102,7 +102,7 @@ class AnglePlots:
             if len(self.stim_event_frames) > 0:
                 self.has_stim_events = True
 
-    def draw_global_plots(self, show=False):
+    def draw_global_plots(self, show=False, close=True):
 
         self.angles_polar = [angle if not pd.isna(angle) else None for angle in self.angles]
         self.angles_line = [-abs(angle) for angle in self.angles]
@@ -151,7 +151,10 @@ class AnglePlots:
         plt.title("Heatmap of All Coords")
         plots.plot_coords(coord_fig, ax, self.head_coords, "x", "y", gridsize=50, vmin=0, vmax=100, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
-    def draw_event_plots(self, show=False):
+    if close:
+        plt.close("all")
+
+    def draw_event_plots(self, show=False, close=True):
         
         if self.has_stim_events:
 
@@ -180,9 +183,6 @@ class AnglePlots:
                     event_stim = self.stim[start:end]
                     event_distances = self.distances_exit[start:end]
                     
-                    event_angle_df = pd.DataFrame((event_angles, event_locs, event_distances))
-                    self.event_angle_dfs.append(event_angle_df)
-
                     #find relevant coords/angles and use to find escape stats
                     pre_stim_coords = self.head_x[:event_t0]
                     stim_coords = self.head_x[event_t0:stim_end]
@@ -253,7 +253,13 @@ class AnglePlots:
                     plt.title(f"Heatmap of Coords for Stim Event {i}")
                     plots.plot_coords(event_coord_fig, ax, event_locs, "x", "y", gridsize=50, vmin=0, vmax=50, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
+                    event_angle_df = pd.DataFrame((event_angles, event_locs, event_distances, during_stim_angles, after_stim_angles))
+                    self.event_angle_dfs.append(event_angle_df)
+                    all_event_angles.append(event_angle_df)
                     all_event_angles.append(event_angles)
+
+                    if close:
+                        plt.close("all)
 
             csv_name = self.base_path + "_escape_stats.csv"
             files.create_csv(event_stats, csv_name)
