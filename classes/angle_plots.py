@@ -8,7 +8,7 @@ from utils import files, distance
 
 class AnglePlots:
 
-    def __init__(self, tracking_file, stim_file, video_file, save_figs=False):
+    def __init__(self, tracking_file, save_figs=False):
 
         # Initialise settings
         self.fps = 30
@@ -102,7 +102,7 @@ class AnglePlots:
             if len(self.stim_event_frames) > 0:
                 self.has_stim_events = True
 
-    def draw_global_plots(self, show=False):
+    def draw_global_plots(self, show=False, close=True):
 
         self.angles_polar = [angle if not pd.isna(angle) else None for angle in self.angles]
         self.angles_line = [-abs(angle) for angle in self.angles]
@@ -151,7 +151,10 @@ class AnglePlots:
         plt.title("Heatmap of All Coords")
         plots.plot_coords(coord_fig, ax, self.head_coords, "x", "y", gridsize=50, vmin=0, vmax=100, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
-    def draw_event_plots(self, show=False):
+        if close:
+            plt.close('all')
+
+    def draw_event_plots(self, show=False, close=True):
         
         if self.has_stim_events:
 
@@ -179,9 +182,6 @@ class AnglePlots:
                     event_locs = self.head_coords[start:end]
                     event_stim = self.stim[start:end]
                     event_distances = self.distances_exit[start:end]
-                    
-                    event_angle_df = pd.DataFrame((event_angles, event_locs, event_distances))
-                    self.event_angle_dfs.append(event_angle_df)
 
                     #find relevant coords/angles and use to find escape stats
                     pre_stim_coords = self.head_x[:event_t0]
@@ -237,7 +237,7 @@ class AnglePlots:
                     during_stim_angles = self.angles_polar[event_t0:escape_frame]
                     after_stim_angles = self.angles_polar[return_frame:end]
 
-                    polar_titles = ['Before Stimulus', 'During Time to Escape / Stimulus', 'After Stimulus']
+                    polar_titles = ['Before Stimulus', 'During Time to Escape / Stimulus', 'After Escape / Stimulus']
                     angle_lists = [before_stim_angles, during_stim_angles, after_stim_angles]
 
                     event_polar_fig, axes = plt.subplots(1, 3, figsize=(12, 5), subplot_kw={'projection': 'polar'})
@@ -253,7 +253,12 @@ class AnglePlots:
                     plt.title(f"Heatmap of Coords for Stim Event {i}")
                     plots.plot_coords(event_coord_fig, ax, event_locs, "x", "y", gridsize=50, vmin=0, vmax=50, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
-                    all_event_angles.append(event_angles)
+                    event_angle_df = pd.DataFrame((event_angles, event_locs, event_distances, during_stim_angles, after_stim_angles))
+                    self.event_angle_dfs.append(event_angle_df)
+                    all_event_angles.append(event_angle_df)
+                    
+                    if close:
+                        plt.close('all')
 
             csv_name = self.base_path + "_escape_stats.csv"
             files.create_csv(event_stats, csv_name)

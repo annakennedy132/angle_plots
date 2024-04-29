@@ -51,21 +51,6 @@ def load_video_file(tracking_file):
     
     return video_file
 
-def h5_file(arg):
-    
-    if arg.endswith(".h5"):
-        
-        try:
-            file = open(arg)
-            file.close()
-            return arg
-        except FileNotFoundError as err:
-            print(err)
-            
-    else:
-        
-        raise NameError("Needs to be an .h5 file")
-
 def read_tracking_file(tracking_file):
     
     tracking = pd.read_hdf(tracking_file)
@@ -75,20 +60,44 @@ def read_tracking_file(tracking_file):
 def get_filenames(parent_folder):
     
     all_paths = [os.path.join(parent_folder, file) for file in os.listdir(parent_folder) if os.path.isfile(os.path.join(parent_folder, file))]
-    tracking_file = stim_file = None
+    tracking_file = stim_file = video_file = None
 
     for file in all_paths:
         
         if file.endswith(".h5"):
-            tracking_file = h5_file(file)
+            tracking_file = parse.h5_file(file)
             
         if file.endswith("_stim.csv") or file.endswith("_sound.csv"): # sound csv legacy
             stim_file = parse.csv_file(file)
+        
+        if file.endswith("_arena.avi"):
+            video_file = parse.video_file(file)
     
     if tracking_file is not None:
-        return tracking_file, stim_file
+        return tracking_file, stim_file, video_file
     else:
         raise NameError("Tracking file required")
+    
+def keep_indexed_folders(data_folders, index_file):
+    with open(index_file) as file:
+        indices = file.readlines()
+        indices = [index.strip() for index in indices]
+
+    keys_to_remove = [key for key in data_folders if key not in indices]
+
+    for key in keys_to_remove:
+        data_folders.pop(key)
+        
+    for key in data_folders.keys():
+        print(f"Loading {key} via index file")
+
+    return data_folders
+
+def get_data_folders(parent_folder):
+    
+    data_folders = {folder_name: os.path.join(parent_folder, folder_name) for folder_name in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder, folder_name))}
+    
+    return data_folders
     
 def get_data_folders(parent_folder):
     

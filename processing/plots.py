@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, data2_label, data1_lim, stim_lim=1.2, show=False):
+def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, data2_label, data1_lim, stim_lim=1.2, show=False, close=True):
     
     color = data1_colour
     ax1.set_xlabel(x_label)
@@ -22,8 +22,9 @@ def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, dat
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     
     if show: plt.show()
+    if close: plt.close()
 
-def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False):
+def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, close=True):
 
     angles_float = [float(angle) for angle in angles if angle is not None]
     angles_radians = np.deg2rad(angles_float)
@@ -49,9 +50,12 @@ def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False):
     ax.set_theta_zero_location(zero)
     fig.tight_layout()
 
+    if show: plt.show()
+    if close: plt.close()
+
     return fig, ax
 
-def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xmax, ymin, ymax, show=False):
+def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xmax, ymin, ymax, show=False, close=True):
     x_values = [coord[0] for coord in coords]
     y_values = [coord[1] for coord in coords]
 
@@ -71,5 +75,8 @@ def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xma
     ax.set_aspect('equal', adjustable='box')
     ax.scatter(mean_coord[0], mean_coord[1], color='red', marker="x", label='Mean Coordinate')
     ax.legend()
+
+    if show: plt.show()
+    if close: plt.close()
 
     return fig
