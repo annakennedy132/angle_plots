@@ -2,7 +2,7 @@ import sys
 import os
 from rich.progress import track
 
-from utils import parse, files
+from utils import files, parse
 from classes.angle_plots import AnglePlots
 
 
@@ -20,7 +20,7 @@ def run():
         try:
             processed_folder = os.path.join(path, "processed")
 
-            tracking_file, stim_file, video_file = files.get_filenames(processed_folder)
+            tracking_file, stim_file, video_file = parse.get_filenames(processed_folder)
 
             ap = AnglePlots(tracking_file)
             ap.process_data(stim_file, video_file)

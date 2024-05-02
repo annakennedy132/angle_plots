@@ -1,5 +1,5 @@
 import sys
-from utils import parse, files
+from utils import files, parse
 from classes.angle_plots import AnglePlots
 
 def run():
