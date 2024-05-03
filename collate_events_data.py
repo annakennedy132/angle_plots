@@ -57,7 +57,7 @@ def run():
         else:
             print(f"No events for {folder_name}")
         
-        '''collated_meta_path = os.path.join(output_folder, "collated_escape-stats.csv")
+        collated_meta_path = os.path.join(output_folder, "collated_escape-stats.csv")
         collation.write_collated_event_data(collated_meta_path, meta_data)
 
         collated_angles_path = os.path.join(output_folder, "collated_event_angles.csv")
@@ -79,7 +79,7 @@ def run():
         collation.write_collated_event_data(collated_during_path, during_angles_data)
 
         collated_after_path = os.path.join(output_folder, "collated_after_angles.csv")
-        collation.write_collated_event_data(collated_after_path, after_angles_data)'''
+        collation.write_collated_event_data(collated_after_path, after_angles_data)
 
         collated_escape_path = os.path.join(output_folder, "collated_escape_success.csv")
         collation.write_collated_event_data(collated_escape_path, escape_stats_data)

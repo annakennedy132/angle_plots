@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 def threshold(arg):
     
@@ -115,3 +116,21 @@ def get_filenames(parent_folder):
         return tracking_file, stim_file, video_file
     else:
         raise NameError("Tracking file required")
+
+def parse_coord(coord_str):
+    # If it's already a tuple, return it
+    if isinstance(coord_str, tuple):
+        return coord_str
+    # If it's a string, parse it
+    elif isinstance(coord_str, str):
+        # Convert string to tuple of floats
+        try:
+            return tuple(map(float, coord_str.strip('[]').split(',')))
+        except ValueError:
+            return np.nan
+    # If it's a float or NaN, return NaN
+    elif isinstance(coord_str, (float, np.floating)) or (isinstance(coord_str, np.ndarray) and np.isnan(coord_str)):
+        return np.nan
+    # For other types, return NaN
+    else:
+        return np.nan
