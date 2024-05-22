@@ -4,11 +4,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from processing import event, data, angles, plots, stats
-from utils import files, distance
+from utils import files, distance, video
 
 class AnglePlots:
 
-    def __init__(self, tracking_file, save_figs=False):
+    def __init__(self, tracking_file, stim_file, video_file, save_figs=False):
 
         # Initialise settings
         self.fps = 30
@@ -47,19 +47,19 @@ class AnglePlots:
         self.results_folder = files.create_folder(self.analysis_folder, "ap-output")
         self.base_path = os.path.join(self.results_folder, self.base_name)
 
-        self.video_file = None
-        self.stim_file = None
+        self.stim_file = stim_file
+        self.video_file = video_file
         self.stim_data = np.zeros(self.num_frames)
         self.has_stim_events = False
+
+        self.exit_coords = angles.get_exit_coords(self.video_file, self.thumbnail_scale)
+        self.exit_roi = video.get_exit_roi(self.exit_coords)
 
         #initialise figures list
         self.figs = []
         self.save_figs = save_figs
         
-    def process_data(self, stim_file, video_file):
-
-        self.stim_file = stim_file
-        self.video_file = video_file
+    def process_data(self):
 
         #create csv name and path
         csv_filename = os.path.splitext(os.path.basename(self.tracking_file))[0] + "_data.csv"
@@ -70,11 +70,11 @@ class AnglePlots:
         self.head_x, self.head_coords, self.nose_coords, self.frames, self.stim = data.extract_data(self.df)
 
         #add angles and distance to exit to df using extracted coords
-        self.angles, exit_coords = angles.get_angles_for_plot(self.video_file, self.head_coords, self.nose_coords, thumbnail_scale=0.6)
+        self.angles = angles.get_angles_for_plot(self.head_coords, self.nose_coords, self.exit_coords)
         self.distances_exit = [
         distance.calc_distance_to_exit(row['nose_x'] if not pd.isna(row['nose_x']) else row['head_x'],
                                        row['nose_y'] if not pd.isna(row['nose_y']) else row['head_y'],
-                                       exit_coords)
+                                       self.exit_coords)
                                        for _, row in self.df.iterrows()]
         
         self.df['distance from nose to exit'] = self.distances_exit
@@ -184,18 +184,19 @@ class AnglePlots:
                     event_distances = self.distances_exit[start:end]
 
                     #find relevant coords/angles and use to find escape stats
-                    pre_stim_coords = self.head_x[:event_t0]
-                    stim_coords = self.head_x[event_t0:stim_end]
-                    all_stim_coords = self.head_x[event_t0:end]
+                    pre_stim_xcoords = self.head_x[:event_t0]
+                    stim_xcoords = self.head_x[event_t0:stim_end]
+                    stim_locs = self.head_coords[event_t0:stim_end]
+                    all_stim_xcoords = self.head_x[event_t0:end]
                     stim_angles = self.angles[event_t0:end]
 
-                    escape_frame = stats.find_escape_frame(stim_coords, event_t0, min_escape_frames=5)
-                    post_stim_coords = self.head_x[escape_frame:end]
-                    return_frame = stats.find_return_frame(post_stim_coords, escape_frame, min_return_frames=15)
+                    escape_frame = stats.find_escape_frame(stim_xcoords, stim_locs, event_t0, min_escape_frames=5, exit_roi=self.exit_roi)
+                    post_stim_xcoords = self.head_x[escape_frame:end]
+                    return_frame = stats.find_return_frame(post_stim_xcoords, escape_frame, min_return_frames=15)
 
                     self.escape_time, self.prev_escape_time, distance_from_exit, facing_exit_time = stats.find_escape_stats(self.df, 
-                                                                                                                            all_stim_coords,
-                                                                                                                            pre_stim_coords, 
+                                                                                                                            all_stim_xcoords,
+                                                                                                                            pre_stim_xcoords, 
                                                                                                                             stim_angles, 
                                                                                                                             event_t0,
                                                                                                                             prev_event, 
@@ -251,7 +252,7 @@ class AnglePlots:
                     event_coord_fig, ax = plt.subplots()
                     self.figs.append(event_coord_fig)
                     plt.title(f"Heatmap of Coords for Stim Event {i}")
-                    plots.plot_coords(event_coord_fig, ax, event_locs, "x", "y", gridsize=50, vmin=0, vmax=50, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
+                    plots.plot_coords(event_coord_fig, ax, event_locs, "x", "y", gridsize=50, vmin=0, vmax=20, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
                     event_angle_df = pd.DataFrame((event_angles, event_locs, event_distances, during_stim_angles, after_stim_angles))
                     self.event_angle_dfs.append(event_angle_df)
@@ -259,7 +260,6 @@ class AnglePlots:
                     
                     if close:
                         plt.close('all')
-
 
             csv_name = self.base_path + "_escape_stats.csv"
             files.create_csv(event_stats, csv_name)
@@ -272,3 +272,4 @@ class AnglePlots:
             files.save_report(self.figs, self.base_path)
         else:
             print("No traces have been  made yet")
+
