@@ -31,13 +31,21 @@ def find_escape_stats(df, all_stim_coords, pre_coords, post_angles, start_frame,
 
     return escape_time, prev_escape_time, distance_from_exit, facing_exit_time
 
-def find_escape_frame(stim_coords, start_frame, min_escape_frames=5):
-
-    escape_index = len(stim_coords)
-    for i in range(0, len(stim_coords) - min_escape_frames + 1):
-        if all(np.isnan(stim_coords[i: i + min_escape_frames])):
-            escape_index = i
-            break
+def find_escape_frame(stim_xcoords, stim_locs, start_frame, min_escape_frames=5, exit_roi=None):
+    escape_index = len(stim_xcoords)
+    last_coord_in_roi = False  # Initialize to False
+    for i in range(0, len(stim_xcoords) - min_escape_frames + 1):
+        if all(np.isnan(stim_xcoords[i: i + min_escape_frames])):
+            last_coord_index = i - 1
+            if exit_roi is not None:
+                last_coord_in_roi = (exit_roi[0] <= stim_locs[last_coord_index][0] <= exit_roi[2]) and \
+                                    (exit_roi[1] <= stim_locs[last_coord_index][1] <= exit_roi[3])
+                if last_coord_in_roi:
+                    escape_index = i
+                    break
+            else:
+                escape_index = i
+    
     escape_frame = start_frame + escape_index
 
     return escape_frame
@@ -54,6 +62,9 @@ def find_return_frame(post_stim_coords, escape_frame, min_return_frames=15):
     return return_frame
 
         
+        
+
+
         
 
 
