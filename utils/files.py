@@ -4,7 +4,6 @@ import pandas as pd
 from datetime import datetime
 import csv
 from matplotlib.backends.backend_pdf import PdfPages
-from utils import parse
 
 def load_config():
     
@@ -56,49 +55,32 @@ def read_tracking_file(tracking_file):
     tracking = pd.read_hdf(tracking_file)
     
     return tracking
-
-def get_filenames(parent_folder):
-    
-    all_paths = [os.path.join(parent_folder, file) for file in os.listdir(parent_folder) if os.path.isfile(os.path.join(parent_folder, file))]
-    tracking_file = stim_file = video_file = None
-
-    for file in all_paths:
-        
-        if file.endswith(".h5"):
-            tracking_file = parse.h5_file(file)
-            
-        if file.endswith("_stim.csv") or file.endswith("_sound.csv"): # sound csv legacy
-            stim_file = parse.csv_file(file)
-        
-        if file.endswith("_arena.avi"):
-            video_file = parse.video_file(file)
-    
-    if tracking_file is not None:
-        return tracking_file, stim_file, video_file
-    else:
-        raise NameError("Tracking file required")
     
 def keep_indexed_folders(data_folders, index_file):
     with open(index_file) as file:
-        indices = file.readlines()
-        indices = [index.strip() for index in indices]
+        indices = [index.strip().split(",") for index in file]
 
-    keys_to_remove = [key for key in data_folders if key not in indices]
+    # Extract folder names from indices
+    index_folders = [index[0] for index in indices]
 
-    for key in keys_to_remove:
-        data_folders.pop(key)
-        
-    for key in data_folders.keys():
+    # Filter data_folders based on index_folders
+    filtered_data_folders = {key: value for key, value in data_folders.items() if key in index_folders}
+
+    # Print loading message for each remaining folder
+    for key in filtered_data_folders.keys():
         print(f"Loading {key} via index file")
 
-    return data_folders
+    return filtered_data_folders
 
-def get_data_folders(parent_folder):
-    
-    data_folders = {folder_name: os.path.join(parent_folder, folder_name) for folder_name in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder, folder_name))}
-    
-    return data_folders
-    
+def get_index_info(folder_name, index_file, item):
+    with open(index_file) as file:
+        for line in file:
+            parts = line.strip().split(",")
+            if int(parts[0]) == int(folder_name):  # Check if number matches folder_name
+                value = parts[item].strip()  # Get the mouse type from the second item
+                return value
+    return None
+
 def get_data_folders(parent_folder):
     
     data_folders = {folder_name: os.path.join(parent_folder, folder_name) for folder_name in os.listdir(parent_folder) if os.path.isdir(os.path.join(parent_folder, folder_name))}
@@ -128,9 +110,12 @@ def create_csv(list, filename):
                 row = [row[0], "None", "None"]
             writer.writerow(row)
 
-def save_report(figs, base_path):
-    
-    with PdfPages(base_path + '_report.pdf') as pdf:
+def save_report(figs, base_path, title=None):
+    if title:
+        report_path = f"{base_path}_{title}_report.pdf"
+    else:
+        report_path = f"{base_path}_report.pdf"
 
+    with PdfPages(report_path) as pdf:
         for fig in figs:
             pdf.savefig(fig)
