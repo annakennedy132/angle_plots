@@ -1,5 +1,6 @@
 import math
 from utils import video
+import numpy as np
 
 def get_exit_coords(video_file, thumbnail_scale):
     frame = video.get_frame(video_file)
@@ -30,10 +31,47 @@ def get_angle_difference(head_nose, head_exit):
 
     return adjusted_angle_difference
 
-def get_angles_for_plot(video_file, head_coords, nose_coords, thumbnail_scale):
-    exit_coords = get_exit_coords(video_file, thumbnail_scale)
+def get_angles_for_plot(head_coords, nose_coords, exit_coords):
     head_nose = get_head_nose_angle(head_coords, nose_coords)
     head_exit = get_head_exit_angle(head_coords, exit_coords)
     angle_difference = get_angle_difference(head_nose, head_exit)
     
-    return angle_difference, exit_coords
+    return angle_difference
+
+def rotate_coordinates(coordinates, exit_point, angle_degrees):
+    # Convert angle from degrees to radians
+    angle = np.radians(-angle_degrees)  # negative because it's clockwise
+    
+    # Convert coordinates and exit point to NumPy arrays
+    coordinates_array = np.array(coordinates)
+    exit_point_array = np.array(exit_point)
+    
+    # Translate coordinates so that exit_point becomes the origin
+    translated_coords = coordinates_array - exit_point_array
+    
+    # Calculate the rotation matrix
+    rotation_matrix = np.array([[np.cos(angle), -np.sin(angle)],
+                                [np.sin(angle), np.cos(angle)]])
+    
+    # Perform the rotation
+    rotated_coords = np.dot(rotation_matrix, translated_coords.T).T
+    
+    # Translate coordinates back
+    rotated_coords = rotated_coords + exit_point_array
+    
+    return rotated_coords
+
+def get_rotated_coords(exit_coord, coords):
+    final_coord = coords[-1]
+    y_difference = final_coord[1] - exit_coord[1]
+    shifted_coords = [(x, y - y_difference) for x, y in coords]
+    first_coord = shifted_coords[0]
+    other_coord = (first_coord[0], exit_coord[1])
+
+    oe_length = exit_coord[0] - other_coord[0]
+    of_length = other_coord[1] - first_coord[1]
+
+    angle_degrees = math.degrees(math.atan(of_length / oe_length))
+    rotated_coords = rotate_coordinates(shifted_coords, exit_coord, angle_degrees)
+
+    return rotated_coords
