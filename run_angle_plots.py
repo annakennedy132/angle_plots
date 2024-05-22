@@ -1,5 +1,5 @@
 import sys
-from utils import parse, files
+from utils import files, parse
 from classes.angle_plots import AnglePlots
 
 def run():
@@ -8,8 +8,8 @@ def run():
     STIM_FILE = files.load_stim_file(TRACKING_FILE)
     VIDEO_FILE = files.load_video_file(TRACKING_FILE)
 
-    ap = AnglePlots(TRACKING_FILE)
-    ap.process_data(STIM_FILE, VIDEO_FILE)
+    ap = AnglePlots(TRACKING_FILE, STIM_FILE, VIDEO_FILE)
+    ap.process_data()
     ap.load_stim_file(STIM_FILE)
     ap.draw_global_plots()
     ap.draw_event_plots()
