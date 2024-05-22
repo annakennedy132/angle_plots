@@ -64,3 +64,13 @@ def click_event(event, x, y, flags, params):
         # displaying the coordinates on the Shell
         click_x, click_y = x, y
 
+def get_exit_roi(exit_coord):
+    exit_x, exit_y = exit_coord
+    roi = [exit_x - 20,
+           exit_y - 100,
+           exit_x + 60,
+           exit_y + 100]
+    
+    return roi
+
+
