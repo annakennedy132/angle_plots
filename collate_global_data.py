@@ -13,6 +13,7 @@ def run():
     global_angles_data = {}
     global_locs_data = {}
     global_dist_data = {}    
+    baseline_data = {}
 
     if INDEX_FILE is not None:
 
@@ -28,7 +29,7 @@ def run():
 
         try:
 
-            global_angles, global_locs, global_dist = collation.read_global_data(path, folder_name, INDEX_FILE)
+            global_angles, global_locs, global_dist, baseline_locs_dict = collation.read_global_data(path, folder_name, INDEX_FILE)
 
             global_angles_data.update(global_angles)
             global_locs_data.update(global_locs)
@@ -48,7 +49,6 @@ def run():
             
         collated_global_dist_path = os.path.join(output_folder, "collated_global_distances.csv")
         collation.write_collated_global_data(collated_global_dist_path, global_dist_data)
-
 
 def parse_args():
 

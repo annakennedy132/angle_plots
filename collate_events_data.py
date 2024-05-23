@@ -84,6 +84,11 @@ def run():
         collated_escape_path = os.path.join(output_folder, "collated_escape_success.csv")
         collation.write_collated_event_data(collated_escape_path, escape_stats_data)
 
+    collation.create_average_csv(collated_avg_angles_path)
+    collation.create_average_csv_escape_success(collated_angles_path)
+    collation.create_average_csv(collated_avg_dist_path)
+    collation.create_average_csv_escape_success(collated_dist_path)
+
 def parse_args():
 
     if len(sys.argv) == 1:

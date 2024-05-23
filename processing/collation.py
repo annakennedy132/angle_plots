@@ -2,6 +2,7 @@ import os
 import csv
 import numpy as np
 from utils import files
+import pandas as pd
 
 def check_for_events(data_folder_path):
     analysis_folder = os.path.join(data_folder_path, "analysis")
@@ -30,9 +31,11 @@ def read_global_data(data_folder_path, data_folder_name, index_file):
     angles_dict = {}
     locs_dict = {}
     distances_dict ={}
+    '''baseline_locs_dict = {}'''
 
     mouse_type = files.get_index_info(data_folder_name, index_file, item=1)
     mouse_age = files.get_index_info(data_folder_name, index_file, item=2)
+    '''stim_start = files.get_index_info(data_folder_name, index_file, item=3)'''
 
     with open(locs_file_path, newline="") as locs_file:
         globalreader = csv.reader(locs_file)
@@ -45,16 +48,24 @@ def read_global_data(data_folder_path, data_folder_name, index_file):
 
         locs = next(globalreader)[1:]
         locs_dict[data_folder_name] = locs
+        
+        '''# Read locs data for baseline_locs_dict
+        baseline_locs = []
+        for row in globalreader:
+            time_point = int(row[0])
+            if time_point <= stim_start:
+                baseline_locs.append(row[1:stim_start + 1])  # Exclude data after stim_start
+        baseline_locs_dict[data_folder_name] = baseline_locs'''
 
         distances = next(globalreader)[1:]
         distances_dict[data_folder_name] = distances
-
-        data_dicts = [angles_dict, locs_dict, distances_dict]
-
-        for data_dict in data_dicts:
-            data_dict[data_folder_name].insert(0, mouse_age)
-            data_dict[data_folder_name].insert(0, mouse_type)
     
+    # Insert age and type for all dictionaries
+    data_dicts = [angles_dict, locs_dict, distances_dict, '''baseline_locs_dict''']
+    for data_dict in data_dicts:
+        data_dict[data_folder_name].insert(0, mouse_age)
+        data_dict[data_folder_name].insert(0, mouse_type)
+
     return angles_dict, locs_dict, distances_dict
 
 def read_event_data(data_folder_path, data_folder_name, index_file):
@@ -199,3 +210,73 @@ def write_collated_event_data(path, data):
         #write the data rows, transposed so it is in columns
         writer.writerows(zip(*data.values()))
 
+def create_average_csv(csv):
+    filename = os.path.splitext(os.path.basename(csv))[0]
+    folder_path = os.path.dirname(csv)
+    avg_file = filename.rsplit("_", 1)[-1]
+
+    # Read the data
+    df = pd.read_csv(csv, header=None)
+
+    # Extract mouse types and data
+    mouse_types = df.iloc[1].tolist()
+    data = df.iloc[3:].astype(float)
+
+    # Calculate row averages for each mouse type
+    averages = {}
+    for mouse_type in set(mouse_types):
+        columns = [i for i, mt in enumerate(mouse_types) if mt == mouse_type]
+        averages[mouse_type] = data.iloc[:, columns].mean(axis=1)
+
+    # Create DataFrame with row averages
+    averages_df = pd.DataFrame(averages)
+
+    # Save the processed data to a new CSV file
+    output_file = os.path.join(folder_path, avg_file + "_avg.csv")
+    averages_df.to_csv(output_file, header=True, index=False, mode='w')  # Set mode to 'w'
+
+def create_average_csv_escape_success(csv):
+
+    filename = os.path.splitext(os.path.basename(csv))[0]
+    folder_path = os.path.dirname(csv)
+    avg_file = filename.rsplit("_", 1)[-1]
+
+    # Read the data
+    df = pd.read_csv(csv)
+
+    # Extract mouse types, escape success, and data
+    mouse_types = df.iloc[0].tolist()
+    escape_success = df.iloc[2].tolist()
+    data = df.iloc[3:].astype(float)
+
+    # Initialize dictionaries to store columns for each category
+    columns = {
+        "wt_true": [], "wt_false": [],
+        "rd1_true": [], "rd1_false": [],
+    }
+
+    # Iterate through columns
+    for col, (mt, esc) in enumerate(zip(mouse_types, escape_success)):
+        if mt == "rd1" and esc:
+            columns["rd1_true"].append(data.iloc[:, col])
+        elif mt.startswith("rd1") and not esc:
+            columns["rd1_false"].append(data.iloc[:, col])
+        elif mt == "wt" and esc:
+            columns["wt_true"].append(data.iloc[:, col])
+        elif mt == "wt" and not esc:
+            columns["wt_false"].append(data.iloc[:, col])
+
+    # Calculate row averages for each category
+    row_averages = {}
+    for key, cols in columns.items():
+        if cols:  # Check if there are any columns in this category
+            row_averages[key] = pd.concat(cols, axis=1).mean(axis=1)
+        else:
+            row_averages[key] = pd.Series([])  # Empty series
+
+    # Create DataFrame with row averages
+    averages_df = pd.DataFrame(row_averages)
+
+    # Save the processed data to a new CSV file
+    output_file = os.path.join(folder_path, avg_file + "_avg_escape_success.csv")
+    averages_df.to_csv(output_file, header=True, index=False, mode='w')  # Set mode to 'w'

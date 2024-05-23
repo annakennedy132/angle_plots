@@ -110,9 +110,12 @@ def create_csv(list, filename):
                 row = [row[0], "None", "None"]
             writer.writerow(row)
 
-def save_report(figs, base_path):
-    
-    with PdfPages(base_path + '_report.pdf') as pdf:
+def save_report(figs, base_path, title=None):
+    if title:
+        report_path = f"{base_path}_{title}_report.pdf"
+    else:
+        report_path = f"{base_path}_report.pdf"
 
+    with PdfPages(report_path) as pdf:
         for fig in figs:
             pdf.savefig(fig)

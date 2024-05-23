@@ -134,3 +134,4 @@ def parse_coord(coord_str):
     # For other types, return NaN
     else:
         return np.nan
+
