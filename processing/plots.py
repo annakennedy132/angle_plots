@@ -31,9 +31,7 @@ def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, dat
     if close: plt.close()
 
 def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, close=True):
-
-    angles = [float(angle) for angle in angles if isinstance(angle, str) and angle.strip() != '' and angle.strip().lower() != 'nan']
-
+    
     angles_float = [float(angle) for angle in angles if angle is not None]
     angles_radians = np.deg2rad(angles_float)
         
