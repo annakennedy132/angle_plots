@@ -208,3 +208,4 @@ def normalize_length(coord_sets):
         normalized_sets.append(list(zip(normalized_x, normalized_y)))
         
     return normalized_sets
+

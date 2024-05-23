@@ -76,3 +76,4 @@ def get_rotated_coords(exit_coord, coords):
     rotated_coords = rotate_coordinates(shifted_coords, exit_coord, angle_degrees)
 
     return rotated_coords
+

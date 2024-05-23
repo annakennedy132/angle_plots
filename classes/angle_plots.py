@@ -8,7 +8,7 @@ from utils import files, distance, video
 
 class AnglePlots:
 
-    def __init__(self, tracking_file, save_figs=False):
+    def __init__(self, tracking_file, stim_file, video_file, save_figs=False):
 
         # Initialise settings
         self.fps = 30
@@ -49,17 +49,18 @@ class AnglePlots:
 
         self.stim_file = None
         self.video_file = None
+
         self.stim_data = np.zeros(self.num_frames)
         self.has_stim_events = False
+
+        self.exit_coords = angles.get_exit_coords(self.video_file, self.thumbnail_scale)
+        self.exit_roi = video.get_exit_roi(self.exit_coords)
 
         #initialise figures list
         self.figs = []
         self.save_figs = save_figs
         
-    def process_data(self, stim_file, video_file):
-
-        self.stim_file = stim_file
-        self.video_file = video_file
+    def process_data(self):
 
         #create csv name and path
         csv_filename = os.path.splitext(os.path.basename(self.tracking_file))[0] + "_data.csv"
@@ -70,6 +71,7 @@ class AnglePlots:
         self.head_x, self.head_coords, self.nose_coords, self.frames, self.stim = data.extract_data(self.df)
 
         #add angles and distance to exit to df using extracted coords
+
         self.angles, self.exit_coord = angles.get_angles_for_plot(self.video_file, self.head_coords, self.nose_coords, self.thumbnail_scale)
         self.distances_exit = [
         distance.calc_distance_to_exit(row['nose_x'] if not pd.isna(row['nose_x']) else row['head_x'],
@@ -254,6 +256,7 @@ class AnglePlots:
                     event_coord_fig, ax = plt.subplots()
                     self.figs.append(event_coord_fig)
                     plt.title(f"Heatmap of Coords for Stim Event {i}")
+
                     plots.plot_coords(event_coord_fig, 
                                       ax, 
                                       event_locs, 
@@ -268,7 +271,7 @@ class AnglePlots:
                                       ymax=100, 
                                       show_coord=event_locs[self.t_minus*self.fps], 
                                       show=show)
-
+  
                     event_angle_df = pd.DataFrame((event_angles, event_locs, event_distances, during_stim_angles, after_stim_angles))
                     self.event_angle_dfs.append(event_angle_df)
                     all_event_angles.append(event_angle_df)
@@ -287,3 +290,4 @@ class AnglePlots:
             files.save_report(self.figs, self.base_path)
         else:
             print("No traces have been  made yet")
+

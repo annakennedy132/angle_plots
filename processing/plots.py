@@ -32,6 +32,8 @@ def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, dat
 
 def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, close=True):
 
+    angles = [float(angle) for angle in angles if isinstance(angle, str) and angle.strip() != '' and angle.strip().lower() != 'nan']
+
     angles_float = [float(angle) for angle in angles if angle is not None]
     angles_radians = np.deg2rad(angles_float)
         
@@ -199,7 +201,43 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels([bar1_label, bar2_label])
+
     ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    if show: 
+        plt.show()
+    if close: 
+        plt.close()
+
+    return fig
+
+def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_label, bar2_label,
+                        color1='blue', color2='green', ylim=None, bar_width=0.5, show=False, close=True):
+    x = np.array([0, 1])
+    
+    mean1 = np.nanmean(data1)
+    mean2 = np.nanmean(data2)
+
+    ax.bar(x[0], mean1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1)
+    ax.bar(x[1], mean2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1)
+
+    # Plot bar outlines with opaque edges
+    ax.bar(x[0], mean1, color='none', edgecolor=color1, linewidth=2, alpha=1, width=bar_width, zorder=2)
+    ax.bar(x[1], mean2, color='none', edgecolor=color2, linewidth=2, alpha=1, width=bar_width, zorder=2)
+    
+    
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels([bar1_label, bar2_label])
+    ax.legend()
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    fig.tight_layout()
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -303,3 +341,4 @@ def plot_one_line(fig, ax, data1, label1, color1, xlabel='X', ylabel='Y', title=
         plt.close()
 
     return fig, ax
+

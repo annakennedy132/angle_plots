@@ -56,6 +56,7 @@ class FinalPlots:
         plt.suptitle(f'Heatmaps of Coords Comparing WT and RD1 Mice During Stimulus Events')
         self.event_figs.append(fig)
         ax1.set_title('WT Mice')
+
         plots.plot_str_coords(fig, ax1, wt_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
         ax2.set_title('RD1 Mice')
         plots.plot_str_coords(fig, ax2, rd1_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
@@ -65,6 +66,7 @@ class FinalPlots:
         fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and RD1 Mice During Events / Time to Escape')
         self.event_figs.append(fig)
         ax1.set_title('WT Mice')
+
         plots.plot_str_polar_chart(fig, ax1, wt_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax2.set_title('RD1 Mice')
         plots.plot_str_polar_chart(fig, ax2, rd1_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
@@ -73,6 +75,7 @@ class FinalPlots:
         fig.suptitle(f'Polar Plot Comparing Facing Angles WT and RD1 Mice After Events / Return from Nest')
         self.event_figs.append(fig)
         ax1.set_title('WT Mice')
+
         plots.plot_str_polar_chart(fig, ax1, wt_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax2.set_title('RD1 Mice')
         plots.plot_str_polar_chart(fig, ax2, rd1_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
@@ -81,6 +84,7 @@ class FinalPlots:
         fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and RD1 Mice During Events / Time to Escape')
         self.event_figs.append(fig)
         ax1.set_title('WT - escape')
+
         plots.plot_str_polar_chart(fig, ax1, wt_true_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax2.set_title('WT - no escape')
         plots.plot_str_polar_chart(fig, ax2, wt_false_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
@@ -93,6 +97,7 @@ class FinalPlots:
         fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and RD1 Mice After Events / Return from Nest')
         self.event_figs.append(fig)
         ax1.set_title('WT - escape')
+
         plots.plot_str_polar_chart(fig, ax1, wt_true_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax2.set_title('WT - no escape')
         plots.plot_str_polar_chart(fig, ax2, wt_false_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
@@ -105,6 +110,7 @@ class FinalPlots:
         plt.suptitle(f'Heatmaps of Coords Comparing Escape Success / WT and RD1 Mice During Events')
         self.event_figs.append(fig)
         ax1.set_title('WT - escape')
+
         plots.plot_str_coords(fig, ax1, wt_true_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
         ax2.set_title('WT - no escape')
         plots.plot_str_coords(fig, ax2, wt_false_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
@@ -590,6 +596,7 @@ class FinalPlots:
 
         for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [global_wt_locs, global_rd1_locs]):
             ax.set_title(title)
+
             plots.plot_str_coords(fig, ax, value, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=2000, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
 
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -598,6 +605,7 @@ class FinalPlots:
 
         for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [wt_baseline_locs, rd1_baseline_locs]):
             ax.set_title(title)
+
             plots.plot_str_coords(fig, ax, value, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=720, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
 
         fig, axes = plt.subplots(1, 2, figsize=(14, 5), subplot_kw=dict(projection='polar'))
@@ -606,6 +614,7 @@ class FinalPlots:
 
         for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [global_wt_angles, global_rd1_angles]):
             ax.set_title(title)
+
             plots.plot_str_polar_chart(fig, ax, value, bins=36, direction=1, zero="E", show=False, close=True)
 
         fig, axes = plt.subplots(1, 2, figsize=(14, 5), subplot_kw=dict(projection='polar'))
@@ -614,7 +623,9 @@ class FinalPlots:
 
         for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [ wt_baseline_angles, rd1_baseline_angles]):
             ax.set_title(title)
+
             plots.plot_str_polar_chart(fig, ax, value, bins=36, direction=1, zero="E", show=False, close=True)
+
 
     def save_pdfs(self):
         if self.save_figs:
@@ -628,7 +639,6 @@ class FinalPlots:
                 files.save_report(self.stats_figs, self.folder, "stats_data")
             if len(self.tort_figs) > 0:
                 files.save_report(self.tort_figs, self.folder, "tortuosity")
-
 
 def stretch_traj(coords, target_start_coord):
     # Extract the target start x-coordinate
@@ -645,3 +655,4 @@ def stretch_traj(coords, target_start_coord):
     translated_coords = [((coord[0] - translation), coord[1]) for coord in stretched_coords]
 
     return translated_coords
+
