@@ -63,54 +63,32 @@ def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, c
 
     return fig, ax
 
-def plot_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, show=True, close=False):
-
-    coords = [coord for coord in coords if not (isinstance(coord, (list, tuple)) and
-                                                not (np.isnan(coord[0]) and np.isnan(coord[1])))]
-    
-    # Extract x and y values
+def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xmax, ymin, ymax, show_coord=None, show=False, close=True):
     x_values = [coord[0] for coord in coords]
     y_values = [coord[1] for coord in coords]
 
-    # Plot coordinates
-    ax.hexbin(x_values, y_values, gridsize=gridsize, cmap='inferno', vmin=vmin, vmax=vmax)
-    if xlabel: ax.set_xlabel(xlabel)
-    if ylabel: ax.set_ylabel(ylabel)
-    if xmin and xmax: ax.set_xlim(xmin, xmax)
-    if ymin and ymax: ax.set_ylim(ymin, ymax)
+    extent = [xmin, xmax, ymin, ymax]
+    
+    hb = ax.hexbin(x_values, y_values, gridsize=gridsize, cmap='inferno', vmin=vmin, vmax=vmax, extent=extent, mincnt=0)
+    fig.colorbar(hb, ax=ax, label='Frequency')
+    ax.set_ylim(ymin+25, ymax-25)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title('Heatmap of Coordinates')
+    ax.set_aspect('equal', adjustable='box')
+    if show_coord:
+        ax.scatter(show_coord[0], show_coord[1], color='red', marker="x")
 
     if show: plt.show()
-    if close: plt.close(fig)
+    if close: plt.close()
 
     return fig
 
-def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=None, show=False, close=True):
-    ''' Plots normalized coordinates vs time; each trajectory with time-based colormap.'''
-    
-    total_time = len(coordinates[0]) / fps
-    
-    colors = np.linspace(0, total_time, len(coordinates[0]))  # Color based on time
-    
-    for coords in coordinates:
-        ax.scatter([coord[0] for coord in coords], [coord[1] for coord in coords], c=colors, cmap='viridis', s=0.25, vmin=0, vmax=total_time)
+def plot_str_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, close=True):
+    angles = [float(angle) for angle in angles if isinstance(angle, str) and angle.strip() != '' and angle.strip().lower() != 'nan']
+    plot_polar_chart(fig, ax, angles, bins, direction, zero, show=show, close=close)
 
-    colorbar = plt.colorbar(ax.collections[0], ax=ax)
-    colorbar.set_label('Time (s)')
-
-    if xlim is not None:
-        ax.set_xlim(xlim)
-    if ylim is not None:
-        ax.set_ylim(ylim)
-    
-    if show:
-        plt.show()
-    
-    if close:
-        plt.close()
-
-    return fig
-
-def plot_string_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, colorbar=False, show=True, close=False):
+def plot_str_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, colorbar=False, show=True, close=False):
     
     # Parse string coordinates to tuples of floats
     coords = [parse.parse_coord(coord) for coord in coords]
@@ -135,7 +113,34 @@ def plot_string_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None,
     if close: plt.close(fig)
 
     return fig
+
+def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=None, show=False, close=True):
+    total_time = len(coordinates[0]) / fps
     
+    colors = np.linspace(0, total_time, len(coordinates[0]))  # Color based on time
+    
+    for coords in coordinates:
+        ax.scatter([coord[0] for coord in coords], [coord[1] for coord in coords], c=colors, cmap='viridis', s=0.25, vmin=0, vmax=total_time)
+
+    colorbar = plt.colorbar(ax.collections[0], ax=ax)
+    colorbar.set_label('Time (s)')
+
+    ax.set_xlabel("x coordinates")
+    ax.set_ylabel("y coordinates") 
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    
+    if show:
+        plt.show()
+    
+    if close:
+        plt.close()
+
+    return fig
+
 def plot_scatter_trendline(fig, ax, data1_x, data1_y, x_label, y_label, title, color='blue', marker_size=20, show=False, close=True):
     sns.regplot(x=data1_x, y=data1_y, ax=ax, scatter=True,
                 scatter_kws={'color': color, 'alpha': 0.7, 's': marker_size}, 
@@ -196,7 +201,43 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels([bar1_label, bar2_label])
+
     ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    if show: 
+        plt.show()
+    if close: 
+        plt.close()
+
+    return fig
+
+def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_label, bar2_label,
+                        color1='blue', color2='green', ylim=None, bar_width=0.5, show=False, close=True):
+    x = np.array([0, 1])
+    
+    mean1 = np.nanmean(data1)
+    mean2 = np.nanmean(data2)
+
+    ax.bar(x[0], mean1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1)
+    ax.bar(x[1], mean2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1)
+
+    # Plot bar outlines with opaque edges
+    ax.bar(x[0], mean1, color='none', edgecolor=color1, linewidth=2, alpha=1, width=bar_width, zorder=2)
+    ax.bar(x[1], mean2, color='none', edgecolor=color2, linewidth=2, alpha=1, width=bar_width, zorder=2)
+    
+    
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels([bar1_label, bar2_label])
+    ax.legend()
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    fig.tight_layout()
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -300,3 +341,4 @@ def plot_one_line(fig, ax, data1, label1, color1, xlabel='X', ylabel='Y', title=
         plt.close()
 
     return fig, ax
+

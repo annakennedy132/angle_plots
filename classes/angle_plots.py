@@ -47,8 +47,9 @@ class AnglePlots:
         self.results_folder = files.create_folder(self.analysis_folder, "ap-output")
         self.base_path = os.path.join(self.results_folder, self.base_name)
 
-        self.stim_file = stim_file
-        self.video_file = video_file
+        self.stim_file = None
+        self.video_file = None
+
         self.stim_data = np.zeros(self.num_frames)
         self.has_stim_events = False
 
@@ -70,17 +71,20 @@ class AnglePlots:
         self.head_x, self.head_coords, self.nose_coords, self.frames, self.stim = data.extract_data(self.df)
 
         #add angles and distance to exit to df using extracted coords
-        self.angles = angles.get_angles_for_plot(self.head_coords, self.nose_coords, self.exit_coords)
+
+        self.angles, self.exit_coord = angles.get_angles_for_plot(self.video_file, self.head_coords, self.nose_coords, self.thumbnail_scale)
         self.distances_exit = [
         distance.calc_distance_to_exit(row['nose_x'] if not pd.isna(row['nose_x']) else row['head_x'],
                                        row['nose_y'] if not pd.isna(row['nose_y']) else row['head_y'],
-                                       self.exit_coords)
+                                       self.exit_coord)
                                        for _, row in self.df.iterrows()]
         
         self.df['distance from nose to exit'] = self.distances_exit
         self.df['angle difference'] = self.angles
 
         self.df.to_csv(csv_path, index=False)
+        self.exit_roi = video.get_exit_roi(self.exit_coord)
+        
         
     def save_angles(self, suffix="angles"):
         df = pd.DataFrame((self.angles, self.head_coords, self.distances_exit))
@@ -149,7 +153,7 @@ class AnglePlots:
         coord_fig, ax = plt.subplots()
         self.figs.append(coord_fig)
         plt.title("Heatmap of All Coords")
-        plots.plot_coords(coord_fig, ax, self.head_coords, "x", "y", gridsize=50, vmin=0, vmax=100, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
+        plots.plot_coords(coord_fig, ax, self.head_coords, "x", "y", gridsize=50, vmin=0, vmax=50, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
         if close:
             plt.close('all')
@@ -252,8 +256,22 @@ class AnglePlots:
                     event_coord_fig, ax = plt.subplots()
                     self.figs.append(event_coord_fig)
                     plt.title(f"Heatmap of Coords for Stim Event {i}")
-                    plots.plot_coords(event_coord_fig, ax, event_locs, "x", "y", gridsize=50, vmin=0, vmax=20, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
 
+                    plots.plot_coords(event_coord_fig, 
+                                      ax, 
+                                      event_locs, 
+                                      "x", 
+                                      "y", 
+                                      gridsize=50, 
+                                      vmin=0, 
+                                      vmax=5, 
+                                      xmin=100, 
+                                      xmax=800, 
+                                      ymin=650, 
+                                      ymax=100, 
+                                      show_coord=event_locs[self.t_minus*self.fps], 
+                                      show=show)
+  
                     event_angle_df = pd.DataFrame((event_angles, event_locs, event_distances, during_stim_angles, after_stim_angles))
                     self.event_angle_dfs.append(event_angle_df)
                     all_event_angles.append(event_angle_df)

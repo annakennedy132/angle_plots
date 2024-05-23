@@ -135,6 +135,3 @@ def parse_coord(coord_str):
     else:
         return np.nan
 
-
-
-    

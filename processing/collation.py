@@ -280,3 +280,4 @@ def create_average_csv_escape_success(csv):
     # Save the processed data to a new CSV file
     output_file = os.path.join(folder_path, avg_file + "_avg_escape_success.csv")
     averages_df.to_csv(output_file, header=True, index=False, mode='w')  # Set mode to 'w'
+

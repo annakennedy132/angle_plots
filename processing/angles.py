@@ -31,12 +31,13 @@ def get_angle_difference(head_nose, head_exit):
 
     return adjusted_angle_difference
 
-def get_angles_for_plot(head_coords, nose_coords, exit_coords):
+def get_angles_for_plot(video_file, head_coords, nose_coords, thumbnail_scale=0.6):
+    exit_coords = get_exit_coords(video_file, thumbnail_scale)
     head_nose = get_head_nose_angle(head_coords, nose_coords)
     head_exit = get_head_exit_angle(head_coords, exit_coords)
     angle_difference = get_angle_difference(head_nose, head_exit)
     
-    return angle_difference
+    return angle_difference, exit_coords
 
 def rotate_coordinates(coordinates, exit_point, angle_degrees):
     # Convert angle from degrees to radians
@@ -75,3 +76,4 @@ def get_rotated_coords(exit_coord, coords):
     rotated_coords = rotate_coordinates(shifted_coords, exit_coord, angle_degrees)
 
     return rotated_coords
+
