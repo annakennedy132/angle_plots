@@ -16,6 +16,7 @@ def run():
     dist_data = {}
     during_angles_data = {}
     after_angles_data = {}
+    prev_esc_locs_data = {}
     average_angles_data = {}
     average_dist_data = {}
     escape_stats_data = {}
@@ -36,7 +37,7 @@ def run():
 
             try:
 
-                meta, angles, locs, distances, average_angles, average_distances, during_angles, after_angles, escape_stats = collation.read_event_data(path, folder_name, INDEX_FILE)
+                meta, angles, locs, distances, average_angles, average_distances, during_angles, after_angles, prev_esc_locs, escape_stats = collation.read_event_data(path, folder_name, INDEX_FILE)
 
                 meta_data.update(meta)
                 angles_data.update(angles)
@@ -44,6 +45,7 @@ def run():
                 dist_data.update(distances)
                 during_angles_data.update(during_angles)
                 after_angles_data.update(after_angles)
+                prev_esc_locs_data.update(prev_esc_locs)
                 escape_stats_data.update(escape_stats)
                 average_angles_data[folder_name] = average_angles
                 average_dist_data[folder_name] = average_distances
@@ -80,6 +82,9 @@ def run():
 
         collated_after_path = os.path.join(output_folder, "collated_after_angles.csv")
         collation.write_collated_event_data(collated_after_path, after_angles_data)
+
+        collated_after_path = os.path.join(output_folder, "collated_prev_esc_locs.csv")
+        collation.write_collated_event_data(collated_after_path, prev_esc_locs_data)
 
         collated_escape_path = os.path.join(output_folder, "collated_escape_success.csv")
         collation.write_collated_event_data(collated_escape_path, escape_stats_data)

@@ -88,6 +88,7 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
     angles_during_dict = {}
     angles_after_dict = {}
     escape_success_dict = {}
+    prev_esc_locs_dict = {}
     all_event_angles = []
     all_event_locs = []
     all_event_distances = []
@@ -155,6 +156,9 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
             
                 after_angles = next(eventreader)[1:]
                 angles_after_dict[event_name] = after_angles
+
+                prev_esc_locs = next(eventreader)[1:]
+                prev_esc_locs_dict[event_name] = prev_esc_locs
     
                 #convert to floats and store in all_event_angles
                 all_event_angles.append(np.array([float(angle) if angle else np.nan for angle in angles]))
@@ -178,7 +182,7 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
         average_distances = np.nanmean(all_event_distances, axis=0)
         average_distances = np.concatenate(([mouse_type], [mouse_age], average_distances))
 
-        return meta_dict, angles_dict, locs_dict, distances_dict, average_angles, average_distances, angles_during_dict, angles_after_dict, escape_success_dict
+        return meta_dict, angles_dict, locs_dict, distances_dict, average_angles, average_distances, angles_during_dict, angles_after_dict, prev_esc_locs_dict, escape_success_dict
         
 def write_collated_global_data(path, data):
 

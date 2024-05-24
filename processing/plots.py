@@ -61,7 +61,7 @@ def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, c
 
     return fig, ax
 
-def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xmax, ymin, ymax, show_coord=None, show=False, close=True):
+def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xmax, ymin, ymax,colorbar=False, show_coord=None, show=False, close=True):
     x_values = [coord[0] for coord in coords]
     y_values = [coord[1] for coord in coords]
 
@@ -74,8 +74,13 @@ def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xma
     ax.set_ylabel(ylabel)
     ax.set_title('Heatmap of Coordinates')
     ax.set_aspect('equal', adjustable='box')
+    
     if show_coord:
         ax.scatter(show_coord[0], show_coord[1], color='red', marker="x")
+
+    if colorbar:
+        cb = fig.colorbar(hb, ax=ax)
+        cb.set_label('Frequency')
 
     if show: plt.show()
     if close: plt.close()
@@ -84,9 +89,36 @@ def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xma
 
 def plot_str_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, close=True):
     angles = [float(angle) for angle in angles if isinstance(angle, str) and angle.strip() != '' and angle.strip().lower() != 'nan']
-    plot_polar_chart(fig, ax, angles, bins, direction, zero, show=show, close=close)
+    angles_float = [float(angle) for angle in angles if angle is not None]
+    angles_radians = np.deg2rad(angles_float)
+        
+    hist, bins = np.histogram(angles_radians, bins=bins)
+    if np.max(hist) != 0:
+        hist_norm = hist / np.max(hist)
+    else:
+        print("Error: No angle values provided for plotting polar chart.")
+        return fig, ax
 
-def plot_str_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, colorbar=False, show=True, close=False):
+    bars = ax.bar(bins[:-1], hist_norm, width=((2*np.pi)/len(bins)),
+                    edgecolor="navy", alpha=0.5)
+
+    for bar, height in zip(bars, hist_norm):
+        bar.set_facecolor(plt.cm.viridis(height))
+
+    ax.set_xticks(np.linspace(0, 2 * np.pi, 8, endpoint=False))  # 8 ticks evenly spaced, excluding the endpoint
+    labels = ['0°', '45°', '90°', '135°', '180°', '-135°', '-90°', '-45°']
+    ax.set_xticklabels(labels)
+        
+    ax.set_theta_direction(direction)
+    ax.set_theta_zero_location(zero)
+    fig.tight_layout()
+
+    if show: plt.show()
+    if close: plt.close()
+
+    return fig, ax
+
+def plot_str_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, colorbar=False, show_coord=None,  show=True, close=False):
     
     # Parse string coordinates to tuples of floats
     coords = [parse.parse_coord(coord) for coord in coords]
@@ -107,15 +139,18 @@ def plot_str_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vm
         cb = fig.colorbar(hb, ax=ax)
         cb.set_label('Frequency')
 
+    if show_coord:
+        ax.scatter(show_coord[0], show_coord[1], color='red', marker="x")
+
     if show: plt.show()
     if close: plt.close(fig)
 
     return fig
 
-def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=None, show=False, close=True):
+def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700,50), show=False, close=True):
     total_time = len(coordinates[0]) / fps
     
-    colors = np.linspace(0, total_time, len(coordinates[0]))  # Color based on time
+    colors = np.linspace(0, total_time, len(coordinates[0]))
     
     for coords in coordinates:
         ax.scatter([coord[0] for coord in coords], [coord[1] for coord in coords], c=colors, cmap='viridis', s=0.25, vmin=0, vmax=total_time)

@@ -29,6 +29,7 @@ class FinalPlots:
         self.global_locs_file = next((os.path.join(self.global_file, file) for file in os.listdir(self.global_file) if file.endswith("locs.csv")), None)
         self.after_angles_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("after_angles.csv")), None)
         self.during_angles_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("during_angles.csv")), None)
+        self.prev_esc_locs_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("collated_prev_esc_locs.csv")), None)
         self.event_locs_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("locs.csv")), None)
         self.event_distances_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("event_distances.csv")), None)
         self.event_angles_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("event_angles.csv")), None)
@@ -44,47 +45,47 @@ class FinalPlots:
 
     def plot_event_data(self):
 
+        wt_before_angles, rd1_before_angles = data.extract_data_columns(self.event_angles_file, data_start=4, data_end=154, escape=False)
         wt_after_angles, rd1_after_angles = data.extract_data_columns(self.after_angles_file, data_start=4, escape=False)
         wt_during_angles, rd1_during_angles = data.extract_data_columns(self.during_angles_file, data_start=4, escape=False)
         wt_locs, rd1_locs = data.extract_data_columns(self.event_locs_file, data_start=4, escape=False)
 
         wt_true_after_angles, wt_false_after_angles, rd1_true_after_angles, rd1_false_after_angles = data.extract_data_columns(self.after_angles_file, data_start=4, escape=True)
         wt_true_during_angles, wt_false_during_angles, rd1_true_during_angles, rd1_false_during_angles = data.extract_data_columns(self.during_angles_file, data_start=4, escape=True)
-        wt_true_locs, wt_false_locs, rd1_true_locs, rd1_false_locs = data.extract_data_columns(self.event_locs_file, data_start=4, escape=True)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
         plt.suptitle(f'Heatmaps of Coords Comparing WT and RD1 Mice During Stimulus Events')
         self.event_figs.append(fig)
         ax1.set_title('WT Mice')
-
         plots.plot_str_coords(fig, ax1, wt_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
         ax2.set_title('RD1 Mice')
         plots.plot_str_coords(fig, ax2, rd1_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
  
         #plot polar plots
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), subplot_kw=dict(projection='polar'))
-        fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and RD1 Mice During Events / Time to Escape')
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5), subplot_kw=dict(projection='polar'))
+        plt.suptitle(f"Polar Plots Comparing Facing Angles of WT Mice Before, During and After Events")
         self.event_figs.append(fig)
-        ax1.set_title('WT Mice')
+        ax1.set_title('Before Stimulus')
+        plots.plot_str_polar_chart(fig, ax1, wt_before_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax2.set_title("During Stimulus / Time to Escape")
+        plots.plot_str_polar_chart(fig, ax2, wt_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax3.set_title("After Stimulus / Return from Nest")
+        plots.plot_str_polar_chart(fig, ax3, wt_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
 
-        plots.plot_str_polar_chart(fig, ax1, wt_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
-        ax2.set_title('RD1 Mice')
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5), subplot_kw=dict(projection='polar'))
+        plt.suptitle(f"Polar Plots Comparing Facing Angles of RD1 Mice Before, During and After Events")
+        self.event_figs.append(fig)
+        ax1.set_title('Before Stimulus')
+        plots.plot_str_polar_chart(fig, ax1, rd1_before_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax2.set_title("During Stimulus / Time to Escape")
         plots.plot_str_polar_chart(fig, ax2, rd1_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
-
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), subplot_kw=dict(projection='polar'))
-        fig.suptitle(f'Polar Plot Comparing Facing Angles WT and RD1 Mice After Events / Return from Nest')
-        self.event_figs.append(fig)
-        ax1.set_title('WT Mice')
-
-        plots.plot_str_polar_chart(fig, ax1, wt_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
-        ax2.set_title('RD1 Mice')
-        plots.plot_str_polar_chart(fig, ax2, rd1_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax3.set_title("After Stimulus / Return from Nest")
+        plots.plot_str_polar_chart(fig, ax3, rd1_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
 
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10), subplot_kw=dict(projection='polar'))
-        fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and RD1 Mice During Events / Time to Escape')
+        fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and RD1 Mice Before Events / Time to Escape')
         self.event_figs.append(fig)
         ax1.set_title('WT - escape')
-
         plots.plot_str_polar_chart(fig, ax1, wt_true_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax2.set_title('WT - no escape')
         plots.plot_str_polar_chart(fig, ax2, wt_false_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
@@ -97,7 +98,6 @@ class FinalPlots:
         fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and RD1 Mice After Events / Return from Nest')
         self.event_figs.append(fig)
         ax1.set_title('WT - escape')
-
         plots.plot_str_polar_chart(fig, ax1, wt_true_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax2.set_title('WT - no escape')
         plots.plot_str_polar_chart(fig, ax2, wt_false_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
@@ -105,19 +105,6 @@ class FinalPlots:
         plots.plot_str_polar_chart(fig, ax3, rd1_true_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax4.set_title('RD1 - no escape')
         plots.plot_str_polar_chart(fig, ax4, rd1_false_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
-
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
-        plt.suptitle(f'Heatmaps of Coords Comparing Escape Success / WT and RD1 Mice During Events')
-        self.event_figs.append(fig)
-        ax1.set_title('WT - escape')
-
-        plots.plot_str_coords(fig, ax1, wt_true_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
-        ax2.set_title('WT - no escape')
-        plots.plot_str_coords(fig, ax2, wt_false_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
-        ax3.set_title('RD1 - escape')
-        plots.plot_str_coords(fig, ax3, rd1_true_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
-        ax4.set_title('RD1 - no escape')
-        plots.plot_str_coords(fig, ax4, rd1_false_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
 
     def plot_avgs_data(self):
         
@@ -171,6 +158,12 @@ class FinalPlots:
         wt_esc_avg, rd1_esc_avg = data.extract_data_rows(self.escape_success_file, row=3, bool_row=None)
         wt_true_data, wt_false_data, rd1_true_data, rd1_false_data = data.extract_data_rows_esc(self.escape_stats_file, row=7)
         wt_true_data_angle, wt_false_data_angle, rd1_true_data_angle, rd1_false_data_angle = data.extract_data_rows_esc(self.escape_stats_file, row=9)
+        wt_true_locs, wt_false_locs, rd1_true_locs, rd1_false_locs = data.extract_data_rows_esc(self.escape_stats_file, row=4)
+
+        mean_wt_true = data.calculate_mean_coords(wt_true_locs)
+        mean_wt_false = data.calculate_mean_coords(wt_false_locs)
+        mean_rd1_true = data.calculate_mean_coords(rd1_true_locs)
+        mean_rd1_false = data.calculate_mean_coords(rd1_false_locs)
 
         wt_time = np.array(wt_time)
         rd1_time = np.array(rd1_time)
@@ -394,11 +387,23 @@ class FinalPlots:
                                     y_limit=(0,15),
                                     show=False,
                                     close=True)
-
+        
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
+        plt.suptitle(f'Heatmaps of Coords Comparing WT and RD1 Mice Locations at Stimulus, and Whether They Escape or Not')
+        self.event_figs.append(fig)
+        ax1.set_title('WT Mice - escape')
+        plots.plot_str_coords(fig, ax1, wt_true_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=2, xmin=80, xmax=790, ymin=670, ymax=70, colorbar=True, show_coord=mean_wt_true, show=False, close=True)
+        ax2.set_title('WT Mice - no escape')
+        plots.plot_str_coords(fig, ax2, wt_false_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=2, xmin=80, xmax=790, ymin=670, ymax=70, colorbar=True, show_coord=mean_wt_false,  show=False, close=True)
+        ax3.set_title('RD1 Mice - escape')
+        plots.plot_str_coords(fig, ax3, rd1_true_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=2, xmin=80, xmax=790, ymin=670, ymax=70, colorbar=True, show_coord=mean_rd1_true,  show=False, close=True)
+        ax4.set_title('RD1 Mice - no escape')
+        plots.plot_str_coords(fig, ax4, rd1_false_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=2, xmin=80, xmax=790, ymin=670, ymax=70, colorbar=True, show_coord=mean_rd1_false,  show=False, close=True)
+ 
     def plot_tort_data(self):
         wt_distances, rd1_distances = data.extract_escape_data(self.event_distances_file)
         wt_angles, rd1_angles = data.extract_escape_data(self.event_angles_file)
-
+       
         wt_angle_difference = []
         rd1_angle_difference = []
         wt_distance_difference = []
@@ -462,6 +467,27 @@ class FinalPlots:
         wt_ang_per_dist = wt_angle_ratio_avg / wt_dist_ratio_avg
         rd1_ang_per_dist = rd1_angle_ratio_avg / rd1_dist_ratio_avg
 
+        wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc = data.extract_data_columns(self.prev_esc_locs_file, data_start=4, escape=True)
+        prev_esc_distance_sets = [wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc]
+        tort_sets = [wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc]
+        for prev_esc_distance_set, tort_set in zip(prev_esc_distance_sets, tort_sets):
+            total_distance_difference = sum(abs(distance_list[i] - distance_list[i-1]) for i in range(1, len(distance_list)))
+            distance_diff_list.append(total_distance_difference)
+
+            # Calculate path length (absolute difference between start and end points)
+            path_length = abs(distance_list[-1] - distance_list[0])
+            path_length_list.append(path_length)
+
+            #calculate distance tortuosity
+            dist_ratio = path_length / total_distance_difference
+            distance_ratio_list.append(dist_ratio)
+
+
+
+
+        wt_dist_ratio_avg = np.mean(wt_dist_ratio)
+        rd1_dist_ratio_avg = np.mean(rd1_dist_ratio)
+
         fig, ax = plt.subplots()
         self.tort_figs.append(fig)
         plots.plot_two_lines(fig, ax, 
@@ -515,73 +541,87 @@ class FinalPlots:
                                 color1='tab:blue', color2='mediumseagreen', ylim=None, bar_width=0.5)
 
     def plot_traj_data(self):
-        wt_locs, rd1_locs = data.extract_escape_locs(self.event_locs_file)
+        wt_true_locs, rd1_true_locs = data.extract_escape_locs(self.event_locs_file, escape=True)
 
-        norm_wt_locs = data.normalize_length(wt_locs)
-        norm_rd1_locs = data.normalize_length(rd1_locs)
+        norm_true_wt_locs = data.normalize_length(wt_true_locs)
+        norm_true_rd1_locs = data.normalize_length(rd1_true_locs)
 
         fig1, ax1 = plt.subplots(figsize=(10,8))
-        fig1.suptitle("All escape paths of WT mice")
+        fig1.suptitle("Paths of WT mice - escape")
         self.traj_figs.append(fig1)
-        plots.time_plot(fig1, ax1, norm_wt_locs, fps=30, show=False, close=False)
+        plots.time_plot(fig1, ax1, norm_true_wt_locs, fps=30, show=False, close=False)
         fig2, ax2 = plt.subplots(figsize=(10,8))
-        fig2.suptitle("All escape paths of RD1 mice")
+        fig2.suptitle("Paths of RD1 mice - escape")
         self.traj_figs.append(fig2)
-        plots.time_plot(fig2, ax2, norm_rd1_locs, fps=30, show=True, close=False)
+        plots.time_plot(fig2, ax2, norm_true_rd1_locs, fps=30, show=True, close=False)
 
-        rotated_wt_coords = []
-        rotated_rd1_coords = []
-        stretched_wt_coords = []
-        stretched_rd1_coords = []
+        rotated_true_wt_coords = []
+        rotated_true_rd1_coords = []
+        stretched_true_wt_coords = []
+        stretched_true_rd1_coords = []
 
         exit_coord = (770, 370)
 
-        for coord_set in norm_wt_locs:
+        for coord_set in norm_true_wt_locs:
             coords = angles.get_rotated_coords(exit_coord, coord_set)
-            rotated_wt_coords.append(coords)
+            rotated_true_wt_coords.append(coords)
 
-        for coord_set in norm_rd1_locs:
+        for coord_set in norm_true_rd1_locs:
             coords = angles.get_rotated_coords(exit_coord, coord_set)
-            rotated_rd1_coords.append(coords)
+            rotated_true_rd1_coords.append(coords)
 
         fig3, ax3 = plt.subplots(figsize=(10,8))
-        fig3.suptitle("Normalised escape paths of WT mice")
+        fig3.suptitle("Normalised paths of WT mice - escape")
         self.traj_figs.append(fig3)
-        plots.time_plot(fig1, ax3, rotated_wt_coords, fps=30, show=False, close=False)
+        plots.time_plot(fig1, ax3, rotated_true_wt_coords, fps=30, show=False, close=False)
         fig4, ax4 = plt.subplots(figsize=(10,8))
-        fig4.suptitle("Normalised escape paths of RD1 mice")
+        fig4.suptitle("Normalised paths of RD1 mice - escape")
         self.traj_figs.append(fig4)
-        plots.time_plot(fig4, ax4, rotated_rd1_coords, fps=30, show=True, close=False)
+        plots.time_plot(fig4, ax4, rotated_true_rd1_coords, fps=30, show=True, close=False)
 
         min_wt_coord = None
         min_rd1_coord = None
 
-        for coord_list in rotated_wt_coords:
+        for coord_list in rotated_true_wt_coords:
             first_coord = coord_list[0]
             if min_wt_coord is None or first_coord[0] < min_wt_coord[0]:
                 min_wt_coord = first_coord
 
-        for coord_list in rotated_wt_coords:
+        for coord_list in rotated_true_wt_coords:
             stretched_coords = stretch_traj(coord_list, min_wt_coord)
-            stretched_wt_coords.append(stretched_coords)
+            stretched_true_wt_coords.append(stretched_coords)
         
-        for coord_list in rotated_rd1_coords:
+        for coord_list in rotated_true_rd1_coords:
             first_coord = coord_list[0]
             if min_rd1_coord is None or first_coord[0] < min_rd1_coord[0]:
                 min_rd1_coord = first_coord
 
-        for coord_list in rotated_rd1_coords:
+        for coord_list in rotated_true_rd1_coords:
             stretched_coords = stretch_traj(coord_list, min_rd1_coord)
-            stretched_rd1_coords.append(stretched_coords)
+            stretched_true_rd1_coords.append(stretched_coords)
 
         fig5, ax5 = plt.subplots(figsize=(10,8))
-        fig5.suptitle("Normalised escape paths of WT mice")
+        fig5.suptitle("Normalised paths of WT mice - escape")
         self.traj_figs.append(fig5)
-        plots.time_plot(fig1, ax5, stretched_wt_coords, fps=30, show=False, close=False)
+        plots.time_plot(fig1, ax5, stretched_true_wt_coords, fps=30, show=False, close=False)
         fig6, ax6 = plt.subplots(figsize=(10,8))
-        fig6.suptitle("Normalised escape paths of RD1 mice")
+        fig6.suptitle("Normalised paths of RD1 mice - escape")
         self.traj_figs.append(fig6)
-        plots.time_plot(fig6, ax6, stretched_rd1_coords, fps=30, show=True, close=False)
+        plots.time_plot(fig6, ax6, stretched_true_rd1_coords, fps=30, show=True, close=False)
+
+        wt_false_locs, rd1_false_locs = data.extract_escape_locs(self.event_locs_file, escape=False)
+
+        norm_false_wt_locs = data.normalize_length(wt_false_locs)
+        norm_false_rd1_locs = data.normalize_length(rd1_false_locs)
+
+        fig1, ax1 = plt.subplots(figsize=(10,8))
+        fig1.suptitle("All paths of WT mice - no escape")
+        self.traj_figs.append(fig1)
+        plots.time_plot(fig1, ax1, norm_false_wt_locs, fps=30, show=False, close=False)
+        fig2, ax2 = plt.subplots(figsize=(10,8))
+        fig2.suptitle("All paths of RD1 mice - no escape")
+        self.traj_figs.append(fig2)
+        plots.time_plot(fig2, ax2, norm_false_rd1_locs, fps=30, show=True, close=False)
 
     def plot_global_data(self):
 

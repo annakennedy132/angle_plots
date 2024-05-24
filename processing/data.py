@@ -166,7 +166,7 @@ def extract_escape_data(file):
 
     return wt_data, rd1_data
 
-def extract_escape_locs(file):
+def extract_escape_locs(file, escape=False):
     df = pd.read_csv(file, header=None, low_memory=False)
 
     wt_data = [[] for _ in range(len(df.columns))]
@@ -177,17 +177,21 @@ def extract_escape_locs(file):
         #154 so that only after stimulus is represented
         column_data = df.iloc[154:, col]
         escape_success_col = df.iloc[3, col]
-
         column_data = [parse.parse_coord(coord) for coord in column_data]
-
-        # Find the index of the first NaN value
         nan_index = next((i for i, (x, y) in enumerate(column_data) if np.isnan(x) or np.isnan(y)), len(column_data))
 
-        if escape_success_col == 'True':  # Only include columns with "True" in escape_success_col
-            if mouse_type == 'wt':
-                wt_data[col] = column_data[:nan_index]
-            elif mouse_type.startswith('rd1'):
-                rd1_data[col] = column_data[:nan_index]
+        if escape:
+            if escape_success_col == 'True':
+                if mouse_type == 'wt':
+                    wt_data[col] = column_data[:nan_index]
+                elif mouse_type.startswith('rd1'):
+                    rd1_data[col] = column_data[:nan_index]
+        else:
+            if escape_success_col == 'False':
+                if mouse_type == 'wt':
+                    wt_data[col] = column_data[:nan_index]
+                elif mouse_type.startswith('rd1'):
+                    rd1_data[col] = column_data[:nan_index]
 
     # Remove empty lists (due to skipped columns)
     wt_data = [data for data in wt_data if data]
@@ -208,4 +212,14 @@ def normalize_length(coord_sets):
         normalized_sets.append(list(zip(normalized_x, normalized_y)))
         
     return normalized_sets
+
+
+def calculate_mean_coords(coords):
+    coord_parsed = [parse.parse_coord(coord) for coord in coords]
+    coords = [coord for coord in coord_parsed if coord is not any(np.isnan(coord))]
+    x_coords = [coord[0] for coord in coords]
+    y_coords = [coord[1] for coord in coords]
+    mean_x = np.nanmean(x_coords)
+    mean_y = np.nanmean(y_coords)
+    return mean_x, mean_y
 

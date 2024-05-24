@@ -180,7 +180,8 @@ class AnglePlots:
                     event_base_path = os.path.join(event_folder_name, self.base_name + "_" + event_name)
                     self.event_base_paths.append(event_base_path)
 
-                    event_angles = self.angles_line[start:end]
+                    event_angles_line = self.angles_line[start:end]
+                    event_angles_polar = self.angles_polar[start:end]
                     event_locs = self.head_coords[start:end]
                     event_stim = self.stim[start:end]
                     event_distances = self.distances_exit[start:end]
@@ -196,7 +197,7 @@ class AnglePlots:
                     post_stim_xcoords = self.head_x[escape_frame:end]
                     return_frame = stats.find_return_frame(post_stim_xcoords, escape_frame, min_return_frames=15)
 
-                    self.escape_time, self.prev_escape_time, distance_from_exit, facing_exit_time = stats.find_escape_stats(self.df, 
+                    self.escape_time, self.prev_escape_time, self.prev_escape_frame, distance_from_exit, facing_exit_time = stats.find_escape_stats(self.df, 
                                                                                                                             all_stim_xcoords,
                                                                                                                             pre_stim_xcoords, 
                                                                                                                             stim_angles, 
@@ -204,6 +205,8 @@ class AnglePlots:
                                                                                                                             prev_event, 
                                                                                                                             self.fps, 
                                                                                                                             min_escape_frames=5)
+
+
 
                     event_stats.append([i, event_locs[self.t_minus*self.fps],
                                         escape_frame,
@@ -220,7 +223,7 @@ class AnglePlots:
                     plots.two_plots(event_two_plots_fig, 
                                     angle_ax,
                                     self.norm_event_time,
-                                    event_angles, event_stim, "tab:blue",
+                                    event_angles_line, event_stim, "tab:blue",
                                     x_label='Time (s)',
                                     data1_label='Mouse Facing Angle',
                                     data2_label='Stim (on/off)',
@@ -239,6 +242,7 @@ class AnglePlots:
                     before_stim_angles = self.angles_polar[start:event_t0]
                     during_stim_angles = self.angles_polar[event_t0:escape_frame]
                     after_stim_angles = self.angles_polar[return_frame:end]
+                    prev_esc_locs = self.distances_exit[self.prev_escape_frame:start]
 
                     polar_titles = ['Before Stimulus', 'During Time to Escape / Stimulus', 'After Escape / Stimulus']
                     angle_lists = [before_stim_angles, during_stim_angles, after_stim_angles]
@@ -270,7 +274,7 @@ class AnglePlots:
                                       show_coord=event_locs[self.t_minus*self.fps], 
                                       show=show)
   
-                    event_angle_df = pd.DataFrame((event_angles, event_locs, event_distances, during_stim_angles, after_stim_angles))
+                    event_angle_df = pd.DataFrame((event_angles_polar, event_locs, event_distances, during_stim_angles, after_stim_angles, prev_esc_locs))
                     self.event_angle_dfs.append(event_angle_df)
                     all_event_angles.append(event_angle_df)
                     

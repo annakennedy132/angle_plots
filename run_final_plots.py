@@ -13,7 +13,7 @@ def run():
     fp.plot_stats_data()
     fp.plot_tort_data()
     fp.save_pdfs()
-    fp.plot_traj_data()
+    #fp.plot_traj_data()
 
 def parse_args():
 
