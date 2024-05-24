@@ -242,7 +242,7 @@ class AnglePlots:
                     before_stim_angles = self.angles_polar[start:event_t0]
                     during_stim_angles = self.angles_polar[event_t0:escape_frame]
                     after_stim_angles = self.angles_polar[return_frame:end]
-                    prev_esc_locs = self.distances_exit[self.prev_escape_frame:start]
+                    prev_esc_locs = self.distances_exit[self.prev_escape_frame:event_t0]
 
                     polar_titles = ['Before Stimulus', 'During Time to Escape / Stimulus', 'After Escape / Stimulus']
                     angle_lists = [before_stim_angles, during_stim_angles, after_stim_angles]

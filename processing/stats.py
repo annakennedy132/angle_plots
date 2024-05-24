@@ -16,7 +16,6 @@ def find_escape_stats(df, all_stim_coords, pre_coords, post_angles, start_frame,
             prev_escape_index = i
             break
     if prev_escape_index is not None:
-        prev_escape_frame = start_frame - prev_escape_index
         prev_escape_time = round(float(start_frame - prev_escape_index) / fps , 2)
 
     distance_from_exit = df["distance from nose to exit"].iloc[start_frame]
@@ -30,7 +29,7 @@ def find_escape_stats(df, all_stim_coords, pre_coords, post_angles, start_frame,
     if facing_exit_index < len(post_angles):
         facing_exit_time = round(float(facing_exit_index) / fps , 2)
 
-    return escape_time, prev_escape_time, prev_escape_frame, distance_from_exit, facing_exit_time
+    return escape_time, prev_escape_time, prev_escape_index, distance_from_exit, facing_exit_time
 
 def find_escape_frame(stim_xcoords, stim_locs, start_frame, min_escape_frames=5, exit_roi=None):
     escape_index = len(stim_xcoords)
