@@ -274,7 +274,7 @@ class AnglePlots:
                                       show_coord=event_locs[self.t_minus*self.fps], 
                                       show=show)
   
-                    event_angle_df = pd.DataFrame((event_angles_polar, event_locs, event_distances, during_stim_angles, after_stim_angles, prev_esc_locs))
+                    event_angle_df = pd.DataFrame((event_angles_polar, event_angles_line, event_locs, event_distances, during_stim_angles, after_stim_angles, prev_esc_locs))
                     self.event_angle_dfs.append(event_angle_df)
                     all_event_angles.append(event_angle_df)
                     

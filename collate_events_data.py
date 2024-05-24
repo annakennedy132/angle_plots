@@ -12,6 +12,7 @@ def run():
     data_folders = files.get_data_folders(FOLDER)
     meta_data = {}
     angles_data = {}
+    angles_line_data = {}
     locs_data = {}
     dist_data = {}
     during_angles_data = {}

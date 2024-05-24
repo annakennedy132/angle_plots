@@ -83,6 +83,7 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
 
     meta_dict = {}
     angles_dict = {}
+    angles_line_dict = {}
     locs_dict = {}
     distances_dict ={}
     angles_during_dict = {}
@@ -126,7 +127,6 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
         escape_success_data = [mouse_type, mouse_age, escape_success_percentage]
         escape_success_dict[data_folder_name] = escape_success_data
 
-
         for event_folder in event_folders:
             event_name = data_folder_name + "_" + event_folder
 
@@ -145,6 +145,9 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
                 angles = next(eventreader)[1:]
                 angles_dict[event_name] = angles
 
+                angles_line = next(eventreader)[1:]
+                angles_line_dict[event_name] = angles_line
+
                 locs = next(eventreader)[1:]
                 locs_dict[event_name] = locs
 
@@ -161,7 +164,7 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
                 prev_esc_locs_dict[event_name] = prev_esc_locs
     
                 #convert to floats and store in all_event_angles
-                all_event_angles.append(np.array([float(angle) if angle else np.nan for angle in angles]))
+                all_event_angles.append(np.array([float(angle) if angle else np.nan for angle in angles_line]))
                 all_event_locs.append(np.array([loc for loc in locs]))
                 all_event_distances.append(np.array([float(distance) if distance else np.nan for distance in distances]))
 
