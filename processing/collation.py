@@ -145,9 +145,6 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
                 angles = next(eventreader)[1:]
                 angles_dict[event_name] = angles
 
-                angles_line = next(eventreader)[1:]
-                angles_line_dict[event_name] = angles_line
-
                 locs = next(eventreader)[1:]
                 locs_dict[event_name] = locs
 
@@ -162,6 +159,9 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
 
                 prev_esc_locs = next(eventreader)[1:]
                 prev_esc_locs_dict[event_name] = prev_esc_locs
+
+                angles_line = next(eventreader)[1:]
+                angles_line_dict[event_name] = angles_line
     
                 #convert to floats and store in all_event_angles
                 all_event_angles.append(np.array([float(angle) if angle else np.nan for angle in angles_line]))
