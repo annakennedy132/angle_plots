@@ -40,7 +40,7 @@ def text_file(arg):
         
         raise NameError("The file should be a .txt file")
 
-def video_file(arg):
+def avi_file(arg):
     
     if arg.endswith(".avi"):
         
@@ -110,7 +110,7 @@ def get_filenames(parent_folder):
             stim_file = csv_file(file)
         
         if file.endswith("_arena.avi"):
-            video_file = video_file(file)
+            video_file = avi_file(file)
     
     if tracking_file is not None:
         return tracking_file, stim_file, video_file

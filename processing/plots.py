@@ -228,49 +228,12 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
     ax.bar(x[0], mean1, color='none', edgecolor=color1, linewidth=2, alpha=1, width=bar_width, zorder=2)
     ax.bar(x[1], mean2, color='none', edgecolor=color2, linewidth=2, alpha=1, width=bar_width, zorder=2)
     
-    
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.set_title(title)
-    ax.set_xticks(x)
-    ax.set_xticklabels([bar1_label, bar2_label])
-
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-
-    if show: 
-        plt.show()
-    if close: 
-        plt.close()
-
-    return fig
-
-def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_label, bar2_label,
-                        color1='blue', color2='green', ylim=None, bar_width=0.5, show=False, close=True):
-    x = np.array([0, 1])
-    
-    mean1 = np.nanmean(data1)
-    mean2 = np.nanmean(data2)
-
-    ax.bar(x[0], mean1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1)
-    ax.bar(x[1], mean2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1)
-
-    # Plot bar outlines with opaque edges
-    ax.bar(x[0], mean1, color='none', edgecolor=color1, linewidth=2, alpha=1, width=bar_width, zorder=2)
-    ax.bar(x[1], mean2, color='none', edgecolor=color2, linewidth=2, alpha=1, width=bar_width, zorder=2)
-    
-    
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels([bar1_label, bar2_label])
     ax.legend()
-
-    if ylim is not None:
-        ax.set_ylim(ylim)
-
-    fig.tight_layout()
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -312,22 +275,24 @@ def plot_binned_bar_chart(fig, ax, data_x, data_y, bin_edges, xlabel, ylabel, ti
 
     return fig
 
-def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, ylabel, title, colors, bar_width=0.35, show=False, close=True):
-
+def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, ylabel, title, colors, bar_width=0.2, show=False, close=True):
     x = np.arange(len(labels))
-    bar_positions = np.arange(len(labels))
-    
+    bar_offsets = np.linspace(-1.5 * bar_width, 1.5 * bar_width, num=4)
+
     datasets = [data1, data2, data3, data4]
 
-    for bar_position, data, color, label in zip(bar_positions, datasets, colors, labels):
-        ax.bar(bar_position, np.nanmean(data), width=bar_width, color=color, alpha=0.6, edgecolor=color, linewidth=2, label=label, zorder=1)
-        ax.bar(bar_position, np.nanmean(data), width=bar_width, color='none', alpha=0.8, edgecolor=color, linewidth=2, label=label, zorder=1)
+    for i, (data, color, label) in enumerate(zip(datasets, colors, labels)):
+        bar_positions = x + bar_offsets[i]
+        mean_value = np.nanmean(data)
+        ax.bar(bar_positions, mean_value, width=bar_width, color=color, alpha=0.6, edgecolor=color, linewidth=2, label=label, zorder=1)
+        ax.scatter(bar_positions[i], color=color, edgecolor='black', zorder=2)
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
+    ax.legend()
 
     if show:
         plt.show()
