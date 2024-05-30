@@ -446,7 +446,19 @@ class FinalPlots:
         plots.plot_str_coords(fig, ax3, rd1_true_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=2, xmin=80, xmax=790, ymin=670, ymax=70, colorbar=True, show_coord=mean_rd1_true,  show=False, close=True)
         ax4.set_title('RD1 Mice - no escape')
         plots.plot_str_coords(fig, ax4, rd1_false_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=2, xmin=80, xmax=790, ymin=670, ymax=70, colorbar=True, show_coord=mean_rd1_false,  show=False, close=True)
- 
+
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
+        plt.suptitle(f'Comparison WT and RD1 Mice Locations at Stimulus, and Whether They Escape or Not')
+        self.event_figs.append(fig)
+        ax1.set_title('WT Mice - escape')
+        plots.scatter_plot_with_stats(fig, ax, wt_true_locs, point_color='blue', background_color='black', mean_marker='*', x_limits=(80,790), y_limits=(670,70), show=True, close=True)
+        ax2.set_title('WT Mice - no escape')
+        plots.scatter_plot_with_stats(fig, ax, wt_false_locs, point_color='blue', background_color='black', mean_marker='*', x_limits=(80,790), y_limits=(670,70), show=True, close=True)
+        ax3.set_title('RD1 Mice - escape')
+        plots.scatter_plot_with_stats(fig, ax, rd1_true_locs, point_color='blue', background_color='black', mean_marker='*', x_limits=(80,790), y_limits=(670,70), show=True, close=True)
+        ax4.set_title('RD1 Mice - no escape')
+        plots.scatter_plot_with_stats(fig, ax, rd1_false_locs, point_color='blue', background_color='black', mean_marker='*', x_limits=(80,790), y_limits=(670,70), show=True, close=True)
+
     def plot_tort_data(self):
         wt_distances, rd1_distances = data.extract_escape_data(self.event_distances_file)
         wt_angles, rd1_angles = data.extract_escape_data(self.event_angles_file)
@@ -622,11 +634,11 @@ class FinalPlots:
                                         "Tortuosity of Path From Previous Escape to Stimulus", 
                                         "Effect of Tortuosity of Path Since Previous Escape on Chance of Escape at Stimulus", 
                                         colors=['blue', 'mediumblue', 'green', 'mediumseagreen'], 
-                                        bar_width=0.35, 
+                                        bar_width=0.35,
+                                        log_y=True, 
                                         show=False, 
                                         close=True)
         
-
     def plot_traj_data(self):
         wt_true_locs, rd1_true_locs = data.extract_escape_locs(self.event_locs_file, escape=True)
 

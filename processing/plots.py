@@ -205,7 +205,6 @@ def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_la
     ax.set_ylabel(y_label)
     
     ax.legend()
-    ax.grid(True, alpha=0.3)
 
     if show: 
         plt.show()
@@ -215,7 +214,9 @@ def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_la
     return fig
 
 def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_label, bar2_label,
-                        color1='blue', color2='green', ylim=None, bar_width=0.5, points=True, show=False, close=True):
+                        color1='blue', color2='green', ylim=None, bar_width=0.5, points=True, 
+                        log_y=False, show=False, close=True):
+
     x = np.array([0, 1])
     
     mean1 = np.nanmean(data1)
@@ -246,6 +247,9 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
 
     if ylim is not None:
         ax.set_ylim(ylim)
+    
+    if log_y:
+        ax.set_yscale('log')
 
     fig.tight_layout()
 
@@ -353,3 +357,50 @@ def plot_one_line(fig, ax, data1, label1, color1, xlabel='X', ylabel='Y', title=
 
     return fig, ax
 
+def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color='black', mean_marker='*', x_limits=None, y_limits=None, show=False, close=True):
+    """
+    Plots a scatter plot with given coordinates, mean, and standard deviation lines.
+    
+    Parameters:
+    - coords: List of tuples (x, y) representing coordinates.
+    - point_color: Color of the scatter points.
+    - background_color: Color of the plot background.
+    - mean_marker: Marker style for the mean point.
+    """
+    # Extract x and y coordinates
+    x_coords = [coord[0] for coord in coords]
+    y_coords = [coord[1] for coord in coords]
+    
+    # Calculate mean and standard deviation
+    mean_x = np.mean(x_coords)
+    mean_y = np.mean(y_coords)
+    std_x = np.std(x_coords)
+    std_y = np.std(y_coords)
+    
+    ax.scatter(x_coords, y_coords, color=point_color, s=50)
+    
+    # Plot mean point
+    ax.scatter(mean_x, mean_y, color='red', s=100, marker=mean_marker)
+    
+    # Plot standard deviation lines
+    ax.plot([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='black')
+    ax.plot([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='black')
+    
+    # Add '|' markers at the ends of the standard deviation lines
+    ax.scatter([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='black', marker='|', s=100)
+    ax.scatter([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='black', marker='_', s=100)
+    
+    # Set background color
+    ax.set_facecolor(background_color)
+
+    if x_limits:
+        ax.set_xlim(x_limits)
+    if y_limits:
+        ax.set_ylim(y_limits)
+    
+    if show:
+        plt.show()
+    if close:
+        plt.close()
+
+    return fig, ax

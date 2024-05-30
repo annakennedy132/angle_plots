@@ -8,13 +8,13 @@ def run():
 
     fp = FinalPlots(FOLDER)
     #fp.plot_global_data()
-    #fp.plot_event_data()
+    fp.plot_event_data()
     #fp.plot_avgs_data()
     #fp.plot_stats_data()
     #fp.plot_tort_data()
     #fp.plot_prev_tort()
     #fp.save_pdfs()
-    fp.plot_traj_data()
+    #fp.plot_traj_data()
 
 def parse_args():
 
