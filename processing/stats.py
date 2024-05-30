@@ -1,22 +1,40 @@
 import numpy as np
 
-def find_escape_stats(df, all_stim_coords, pre_coords, post_angles, start_frame, prev_end, fps, min_escape_frames=5):
+def find_escape_stats(df, all_stim_coords, stim_locs, pre_coords, pre_xcoords, post_angles, start_frame, prev_end, fps, exit_roi=None, min_escape_frames=5):
 
     escape_index = len(all_stim_coords)
     for i in range(0, len(all_stim_coords) - min_escape_frames + 1):
         if all(np.isnan(all_stim_coords[i: i + min_escape_frames])):
-            escape_index = i
-            break
+            last_coord_index = i - 1
+            if exit_roi is not None:
+                if last_coord_index >= 0:
+                    last_coord_in_roi = (exit_roi[0] <= stim_locs[last_coord_index][0] <= exit_roi[2]) and \
+                                        (exit_roi[1] <= stim_locs[last_coord_index][1] <= exit_roi[3])
+                    if last_coord_in_roi:
+                        escape_index = i
+                        break
+            else:
+                escape_index = i
+
     escape_time = round(float(escape_index) / fps , 2)
 
     prev_escape_time = None
     prev_escape_index = None
-    for i in range(len(pre_coords) - min_escape_frames, prev_end, -1):
-        if np.isnan(pre_coords[i]) and all(np.isnan(pre_coords[i - min_escape_frames + 1: i + 1])):
-            prev_escape_index = i
-            break
+    for i in range(len(pre_xcoords) - min_escape_frames, prev_end, -1):
+        if np.isnan(pre_xcoords[i]) and all(np.isnan(pre_xcoords[i - min_escape_frames + 1: i + 1])):
+            if exit_roi is not None:
+                previous_coord_index = i + 1
+                if previous_coord_index >= 0:
+                    previous_coord_in_roi = (exit_roi[0] <= pre_coords[previous_coord_index][0] <= exit_roi[2]) and \
+                                            (exit_roi[1] <= pre_coords[previous_coord_index][1] <= exit_roi[3])
+                    if previous_coord_in_roi:
+                        prev_escape_index = i
+                        break
+                else:
+                    prev_escape_index = i
+
     if prev_escape_index is not None:
-        prev_escape_time = round(float(start_frame - prev_escape_index) / fps , 2)
+        prev_escape_time = round(float(start_frame - prev_escape_index) / fps, 2)
 
     distance_from_exit = df["distance from nose to exit"].iloc[start_frame]
 
@@ -33,16 +51,17 @@ def find_escape_stats(df, all_stim_coords, pre_coords, post_angles, start_frame,
 
 def find_escape_frame(stim_xcoords, stim_locs, start_frame, min_escape_frames=5, exit_roi=None):
     escape_index = len(stim_xcoords)
-    last_coord_in_roi = False  # Initialize to False
+    
     for i in range(0, len(stim_xcoords) - min_escape_frames + 1):
         if all(np.isnan(stim_xcoords[i: i + min_escape_frames])):
             last_coord_index = i - 1
             if exit_roi is not None:
-                last_coord_in_roi = (exit_roi[0] <= stim_locs[last_coord_index][0] <= exit_roi[2]) and \
-                                    (exit_roi[1] <= stim_locs[last_coord_index][1] <= exit_roi[3])
-                if last_coord_in_roi:
-                    escape_index = i
-                    break
+                if last_coord_index >= 0:
+                    last_coord_in_roi = (exit_roi[0] <= stim_locs[last_coord_index][0] <= exit_roi[2]) and \
+                                        (exit_roi[1] <= stim_locs[last_coord_index][1] <= exit_roi[3])
+                    if last_coord_in_roi:
+                        escape_index = i
+                        break
             else:
                 escape_index = i
     

@@ -188,6 +188,7 @@ class AnglePlots:
 
                     #find relevant coords/angles and use to find escape stats
                     pre_stim_xcoords = self.head_x[:event_t0]
+                    pre_coords = self.head_coords[:event_t0]
                     stim_xcoords = self.head_x[event_t0:stim_end]
                     stim_locs = self.head_coords[event_t0:stim_end]
                     all_stim_xcoords = self.head_x[event_t0:end]
@@ -197,16 +198,17 @@ class AnglePlots:
                     post_stim_xcoords = self.head_x[escape_frame:end]
                     return_frame = stats.find_return_frame(post_stim_xcoords, escape_frame, min_return_frames=15)
 
-                    self.escape_time, self.prev_escape_time, self.prev_escape_frame, distance_from_exit, facing_exit_time = stats.find_escape_stats(self.df, 
+                    self.escape_time, self.prev_escape_time, self.prev_escape_frame, distance_from_exit, facing_exit_time = stats.find_escape_stats(self.df,
                                                                                                                             all_stim_xcoords,
+                                                                                                                            stim_locs,
+                                                                                                                            pre_coords,
                                                                                                                             pre_stim_xcoords, 
                                                                                                                             stim_angles, 
                                                                                                                             event_t0,
                                                                                                                             prev_event, 
                                                                                                                             self.fps, 
+                                                                                                                            exit_roi=self.exit_roi,
                                                                                                                             min_escape_frames=5)
-
-
 
                     event_stats.append([i, event_locs[self.t_minus*self.fps],
                                         escape_frame,

@@ -155,7 +155,7 @@ def extract_escape_data(file):
         # Find the index of the first NaN value
         nan_index = next((i for i, x in enumerate(column_data) if pd.isna(x)), len(column_data))
 
-        if escape_success_col == 'True':  # Only include columns with "True" in escape_success_col
+        if escape_success_col == 'TRUE' or escape_success_col == "True":  # Only include columns with "True" in escape_success_col
             if mouse_type == 'wt':
                 wt_data[col] = column_data[:nan_index]
             elif mouse_type.startswith('rd1'):
@@ -198,6 +198,39 @@ def extract_escape_locs(file, escape=False):
     rd1_data = [data for data in rd1_data if data]
 
     return wt_data, rd1_data
+
+def extract_tort_data(file):
+    df = pd.read_csv(file, header=None, low_memory=False)
+
+    wt_true_data = [[] for _ in range(len(df.columns))]
+    wt_false_data = [[] for _ in range(len(df.columns))]
+    rd1_true_data = [[] for _ in range(len(df.columns))]
+    rd1_false_data = [[] for _ in range(len(df.columns))]
+
+    for col in range(len(df.columns)):
+        mouse_type = df.iloc[1, col]
+        column_data = df.iloc[5:, col]
+        escape_success_col = df.iloc[3, col]
+
+        column_data = [float(x) for x in column_data if pd.notna(x) and x != 'nan']
+
+        if escape_success_col == 'True':  # Only include columns with "True" in escape_success_col
+            if mouse_type == 'wt':
+                wt_true_data[col] = column_data
+            elif mouse_type.startswith('rd1'):
+                rd1_true_data[col] = column_data
+        if escape_success_col == 'False':  # Only include columns with "True" in escape_success_col
+            if mouse_type == 'wt':
+                wt_false_data[col] = column_data
+            elif mouse_type.startswith('rd1'):
+                rd1_false_data[col] = column_data
+
+    wt_true_data = [data for data in wt_true_data if data]
+    wt_false_data = [data for data in wt_false_data if data]
+    rd1_true_data = [data for data in rd1_true_data if data]
+    rd1_false_data = [data for data in rd1_false_data if data]
+
+    return wt_true_data, wt_false_data, rd1_true_data, rd1_false_data
     
 def normalize_length(coord_sets):
     max_length = max([len(coord_set) for coord_set in coord_sets])
@@ -212,7 +245,6 @@ def normalize_length(coord_sets):
         normalized_sets.append(list(zip(normalized_x, normalized_y)))
         
     return normalized_sets
-
 
 def calculate_mean_coords(coords):
     coord_parsed = [parse.parse_coord(coord) for coord in coords]

@@ -215,7 +215,7 @@ def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_la
     return fig
 
 def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_label, bar2_label,
-                        color1='blue', color2='green', ylim=None, bar_width=0.5, show=False, close=True):
+                        color1='blue', color2='green', ylim=None, bar_width=0.5, points=True, show=False, close=True):
     x = np.array([0, 1])
     
     mean1 = np.nanmean(data1)
@@ -228,6 +228,15 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
     ax.bar(x[0], mean1, color='none', edgecolor=color1, linewidth=2, alpha=1, width=bar_width, zorder=2)
     ax.bar(x[1], mean2, color='none', edgecolor=color2, linewidth=2, alpha=1, width=bar_width, zorder=2)
     
+    # Plot individual data points
+    if points:
+        for i, data in enumerate([data1, data2]):
+            bar = x[i]
+            color = color1 if i == 0 else color2
+            for value in data:
+                if not np.isnan(value):
+                    ax.scatter(bar, value, color=color, marker='o', s=20, zorder=3)
+
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_title(title)
@@ -240,8 +249,10 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
 
     fig.tight_layout()
 
-    if show: plt.show()
-    if close: plt.close()
+    if show:
+        plt.show()
+    if close:
+        plt.close()
 
     return fig
 
@@ -275,24 +286,26 @@ def plot_binned_bar_chart(fig, ax, data_x, data_y, bin_edges, xlabel, ylabel, ti
 
     return fig
 
-def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, ylabel, title, colors, bar_width=0.2, show=False, close=True):
-    x = np.arange(len(labels))
-    bar_offsets = np.linspace(-1.5 * bar_width, 1.5 * bar_width, num=4)
+def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, ylabel, title, colors, bar_width=0.35, show=False, close=True):
 
+    x = np.arange(len(labels))
+    bar_positions = np.arange(len(labels))
+    
     datasets = [data1, data2, data3, data4]
 
-    for i, (data, color, label) in enumerate(zip(datasets, colors, labels)):
-        bar_positions = x + bar_offsets[i]
-        mean_value = np.nanmean(data)
-        ax.bar(bar_positions, mean_value, width=bar_width, color=color, alpha=0.6, edgecolor=color, linewidth=2, label=label, zorder=1)
-        ax.scatter(bar_positions[i], color=color, edgecolor='black', zorder=2)
+    for bar_position, data, color, label in zip(bar_positions, datasets, colors, labels):
+        ax.bar(bar_position, np.nanmean(data), width=bar_width, color=color, alpha=0.6, edgecolor=color, linewidth=2, label=label, zorder=1)
+        ax.bar(bar_position, np.nanmean(data), width=bar_width, color='none', alpha=0.8, edgecolor=color, linewidth=2, label=label, zorder=1)
+        
+        for value in data:
+            if not np.isnan(value):
+                ax.scatter(bar_position, value, color=color, marker='o', s=2, zorder=2)
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
-    ax.legend()
 
     if show:
         plt.show()

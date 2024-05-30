@@ -43,6 +43,49 @@ class FinalPlots:
         self.escape_stats_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("escape-stats.csv")), None)
         self.escape_success_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("collated_escape_success.csv")), None)
 
+    def plot_global_data(self):
+
+        global_wt_angles, global_rd1_angles = data.extract_data_columns(self.global_angles_file, data_start=3)
+        global_wt_locs, global_rd1_locs = data.extract_data_columns(self.global_locs_file, data_start=3)
+        wt_baseline_locs, rd1_baseline_locs = data.extract_data_columns(self.global_locs_file, data_start=3, data_end=5400)
+        self.wt_baseline_angles, self.rd1_baseline_angles = data.extract_data_columns(self.global_angles_file, data_start=3, data_end=5400)
+
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+        plt.suptitle(f'Heatmaps of All Coords Comparing WT and RD1 Mice (including events)')
+        self.global_figs.append(fig)
+
+        for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [global_wt_locs, global_rd1_locs]):
+            ax.set_title(title)
+
+            plots.plot_str_coords(fig, ax, value, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=2000, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
+
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+        plt.suptitle(f'Heatmaps of Coords Comparing WT and RD1 Mice (baseline - first 3 minutes)')
+        self.global_figs.append(fig)
+
+        for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [wt_baseline_locs, rd1_baseline_locs]):
+            ax.set_title(title)
+
+            plots.plot_str_coords(fig, ax, value, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=720, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
+
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5), subplot_kw=dict(projection='polar'))
+        fig.suptitle(f'Polar Plot Comparing All Facing Angles WT and RD1 Mice')
+        self.global_figs.append(fig)
+
+        for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [global_wt_angles, global_rd1_angles]):
+            ax.set_title(title)
+
+            plots.plot_str_polar_chart(fig, ax, value, bins=36, direction=1, zero="E", show=False, close=True)
+
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5), subplot_kw=dict(projection='polar'))
+        fig.suptitle(f'Polar Plot Comparing Facing Angles WT and RD1 Mice (baseline - first 3 minutes)')
+        self.global_figs.append(fig)
+
+        for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [self.wt_baseline_angles, self.rd1_baseline_angles]):
+            ax.set_title(title)
+
+            plots.plot_str_polar_chart(fig, ax, value, bins=36, direction=1, zero="E", show=False, close=True)
+
     def plot_event_data(self):
 
         wt_before_angles, rd1_before_angles = data.extract_data_columns(self.event_angles_file, data_start=4, data_end=154, escape=False)
@@ -62,25 +105,29 @@ class FinalPlots:
         plots.plot_str_coords(fig, ax2, rd1_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
  
         #plot polar plots
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5), subplot_kw=dict(projection='polar'))
-        plt.suptitle(f"Polar Plots Comparing Facing Angles of WT Mice Before, During and After Events")
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 5), subplot_kw=dict(projection='polar'))
+        plt.suptitle(f"Polar Plots Comparing Facing Angles of WT Mice at Baseline, Before, During and After Events")
         self.event_figs.append(fig)
-        ax1.set_title('Before Stimulus')
-        plots.plot_str_polar_chart(fig, ax1, wt_before_angles, bins=36, direction=1, zero="E", show=False, close=True)
-        ax2.set_title("During Stimulus / Time to Escape")
-        plots.plot_str_polar_chart(fig, ax2, wt_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
-        ax3.set_title("After Stimulus / Return from Nest")
-        plots.plot_str_polar_chart(fig, ax3, wt_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax1.set_title('Baseline - first 3 minutes')
+        plots.plot_str_polar_chart(fig, ax1, self.wt_baseline_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax2.set_title('Before Stimulus')
+        plots.plot_str_polar_chart(fig, ax2, wt_before_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax3.set_title("During Stimulus / Time to Escape")
+        plots.plot_str_polar_chart(fig, ax3, wt_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax4.set_title("After Stimulus / Return from Nest")
+        plots.plot_str_polar_chart(fig, ax4, wt_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
 
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5), subplot_kw=dict(projection='polar'))
-        plt.suptitle(f"Polar Plots Comparing Facing Angles of RD1 Mice Before, During and After Events")
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 5), subplot_kw=dict(projection='polar'))
+        plt.suptitle(f"Polar Plots Comparing Facing Angles of RD1 Mice at Baseline, Before, During and After Events")
         self.event_figs.append(fig)
-        ax1.set_title('Before Stimulus')
-        plots.plot_str_polar_chart(fig, ax1, rd1_before_angles, bins=36, direction=1, zero="E", show=False, close=True)
-        ax2.set_title("During Stimulus / Time to Escape")
-        plots.plot_str_polar_chart(fig, ax2, rd1_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
-        ax3.set_title("After Stimulus / Return from Nest")
-        plots.plot_str_polar_chart(fig, ax3, rd1_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax1.set_title('Baseline - first 3 minutes')
+        plots.plot_str_polar_chart(fig, ax1, self.rd1_baseline_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax2.set_title('Before Stimulus')
+        plots.plot_str_polar_chart(fig, ax2, rd1_before_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax3.set_title("During Stimulus / Time to Escape")
+        plots.plot_str_polar_chart(fig, ax3, rd1_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        ax4.set_title("After Stimulus / Return from Nest")
+        plots.plot_str_polar_chart(fig, ax4, rd1_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
 
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10), subplot_kw=dict(projection='polar'))
         fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and RD1 Mice Before Events / Time to Escape')
@@ -441,7 +488,7 @@ class FinalPlots:
                 angle_change_list.append(angle_length)
 
                 #calculate distance tortuosity
-                dist_ratio = path_length / total_distance_difference
+                dist_ratio = total_distance_difference / path_length
                 distance_ratio_list.append(dist_ratio)
 
                 #calculate angle tortuosity
@@ -467,28 +514,10 @@ class FinalPlots:
         wt_ang_per_dist = wt_angle_ratio_avg / wt_dist_ratio_avg
         rd1_ang_per_dist = rd1_angle_ratio_avg / rd1_dist_ratio_avg
 
-        wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc = data.extract_data_columns(self.prev_esc_locs_file, data_start=4, escape=True)
-        prev_esc_distance_sets = [wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc]
-        tort_sets = [wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc]
-        for prev_esc_distance_set, tort_set in zip(prev_esc_distance_sets, tort_sets):
-            total_distance_difference = sum(abs(distance_list[i] - distance_list[i-1]) for i in range(1, len(distance_list)))
-            distance_diff_list.append(total_distance_difference)
-
-            # Calculate path length (absolute difference between start and end points)
-            path_length = abs(distance_list[-1] - distance_list[0])
-            path_length_list.append(path_length)
-
-            #calculate distance tortuosity
-            dist_ratio = path_length / total_distance_difference
-            distance_ratio_list.append(dist_ratio)
-
-
-
-
         wt_dist_ratio_avg = np.mean(wt_dist_ratio)
         rd1_dist_ratio_avg = np.mean(rd1_dist_ratio)
 
-        fig, ax = plt.subplots()
+        '''fig, ax = plt.subplots()
         self.tort_figs.append(fig)
         plots.plot_two_lines(fig, ax, 
                             wt_angle_difference, 
@@ -521,24 +550,70 @@ class FinalPlots:
         fig1.suptitle("Measure of tortuosity for escape paths - overall distance covered / total distance covered")
         plots.plot_one_line(fig1, ax1, wt_dist_ratio, "WT", "darkblue", xlabel='Escape', ylabel='Ratio', title='WT', ylim=(0, 2))
         plots.plot_one_line(fig1, ax2, rd1_dist_ratio, "RD1", "seagreen", xlabel='Escape', ylabel='Ratio', title='RD1', ylim=(0,2))
-
+'''
         fig3, ax = plt.subplots()
         self.tort_figs.append(fig3)
         plots.plot_bar_two_groups(fig3, ax, 
                                     wt_dist_ratio,  
                                     rd1_dist_ratio, 
                                     "Mouse type", 
-                                    "Average - overall distance covered / total distance covered", 
-                                    "Average tortuosity of escape paths", 
+                                    "Total Distance Covered / Path Length", 
+                                    "Tortuosity of escape paths", 
                                     "WT", 
                                     "RD1",
-                                    color1='tab:blue', color2='mediumseagreen', ylim=(0,1), bar_width=0.5)
+                                    color1='tab:blue', color2='mediumseagreen', ylim=None, bar_width=0.5, points=True)
 
-        fig4, ax = plt.subplots()
+        '''fig4, ax = plt.subplots()
         self.tort_figs.append(fig4)
-        plots.plot_bar_two_groups(fig, ax, wt_ang_per_dist, rd1_ang_per_dist, "Mouse type", "Average angles faced per distance travelled", 
+        plots.plot_bar_two_groups(fig4, ax, wt_ang_per_dist, rd1_ang_per_dist, "Mouse type", "Average angles faced per distance travelled", 
                                 "Average angles faced per distance travelled in WT and RD1 mice", "WT", "RD1",
-                                color1='tab:blue', color2='mediumseagreen', ylim=None, bar_width=0.5)
+                                color1='tab:blue', color2='mediumseagreen', ylim=None, bar_width=0.5)'''
+
+    def plot_prev_tort(self):
+        wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc = data.extract_tort_data(self.prev_esc_locs_file)
+        
+        wt_true_tort = []
+        wt_false_tort = []
+        rd1_true_tort = []
+        rd1_false_tort = []
+
+        distance_sets = [wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc]
+        
+        for distance_set in distance_sets:
+            
+            tort_list = []
+
+            for distance_list in distance_set:
+                total_distance_difference = sum(abs(distance_list[i] - distance_list[i-1]) for i in range(1, len(distance_list)))
+                path_length = abs(distance_list[-1] - distance_list[0])
+                dist_ratio = total_distance_difference / path_length
+                tort_list.append(dist_ratio)
+            
+            if distance_set == wt_true_prev_esc:
+                wt_true_tort = tort_list
+            elif distance_set == wt_false_prev_esc:
+                wt_false_tort = tort_list
+            elif distance_set == rd1_true_prev_esc:
+                rd1_true_tort = tort_list
+            elif distance_set == rd1_false_prev_esc:
+                rd1_false_tort = tort_list
+        
+        fig, ax = plt.subplots(figsize=(8,5))
+        self.tort_figs.append(fig)
+        plots.plot_grouped_bar_chart(fig, ax, 
+                                        wt_true_tort, 
+                                        wt_false_tort, 
+                                        rd1_true_tort, 
+                                        rd1_false_tort, 
+                                        ["WT - escape", "WT - no escape", "RD1 - escape", "RD1 - no escape"],
+                                        "Mouse Type", 
+                                        "Tortuosity of Path From Previous Escape to Stimulus", 
+                                        "Effect of Tortuosity of Path Since Previous Escape on Chance of Escape at Stimulus", 
+                                        colors=['blue', 'mediumblue', 'green', 'mediumseagreen'], 
+                                        bar_width=0.35, 
+                                        show=False, 
+                                        close=True)
+        
 
     def plot_traj_data(self):
         wt_true_locs, rd1_true_locs = data.extract_escape_locs(self.event_locs_file, escape=True)
@@ -622,50 +697,6 @@ class FinalPlots:
         fig2.suptitle("All paths of RD1 mice - no escape")
         self.traj_figs.append(fig2)
         plots.time_plot(fig2, ax2, norm_false_rd1_locs, fps=30, show=True, close=False)
-
-    def plot_global_data(self):
-
-        global_wt_angles, global_rd1_angles = data.extract_data_columns(self.global_angles_file, data_start=3)
-        global_wt_locs, global_rd1_locs = data.extract_data_columns(self.global_locs_file, data_start=3)
-        wt_baseline_locs, rd1_baseline_locs = data.extract_data_columns(self.global_locs_file, data_start=3, data_end=5400)
-        wt_baseline_angles, rd1_baseline_angles = data.extract_data_columns(self.global_angles_file, data_start=3, data_end=5400)
-
-        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-        plt.suptitle(f'Heatmaps of All Coords Comparing WT and RD1 Mice (including events)')
-        self.global_figs.append(fig)
-
-        for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [global_wt_locs, global_rd1_locs]):
-            ax.set_title(title)
-
-            plots.plot_str_coords(fig, ax, value, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=2000, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
-
-        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-        plt.suptitle(f'Heatmaps of Coords Comparing WT and RD1 Mice (baseline - first 3 minutes)')
-        self.global_figs.append(fig)
-
-        for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [wt_baseline_locs, rd1_baseline_locs]):
-            ax.set_title(title)
-
-            plots.plot_str_coords(fig, ax, value, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=720, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
-
-        fig, axes = plt.subplots(1, 2, figsize=(14, 5), subplot_kw=dict(projection='polar'))
-        fig.suptitle(f'Polar Plot Comparing All Facing Angles WT and RD1 Mice')
-        self.global_figs.append(fig)
-
-        for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [global_wt_angles, global_rd1_angles]):
-            ax.set_title(title)
-
-            plots.plot_str_polar_chart(fig, ax, value, bins=36, direction=1, zero="E", show=False, close=True)
-
-        fig, axes = plt.subplots(1, 2, figsize=(14, 5), subplot_kw=dict(projection='polar'))
-        fig.suptitle(f'Polar Plot Comparing Facing Angles WT and RD1 Mice (baseline - first 3 minutes)')
-        self.global_figs.append(fig)
-
-        for ax, title, value in zip(axes, ['WT Mice', 'RD1 Mice'], [ wt_baseline_angles, rd1_baseline_angles]):
-            ax.set_title(title)
-
-            plots.plot_str_polar_chart(fig, ax, value, bins=36, direction=1, zero="E", show=False, close=True)
-
 
     def save_pdfs(self):
         if self.save_figs:

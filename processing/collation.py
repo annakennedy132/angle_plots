@@ -31,11 +31,9 @@ def read_global_data(data_folder_path, data_folder_name, index_file):
     angles_dict = {}
     locs_dict = {}
     distances_dict ={}
-    '''baseline_locs_dict = {}'''
 
     mouse_type = files.get_index_info(data_folder_name, index_file, item=1)
     mouse_age = files.get_index_info(data_folder_name, index_file, item=2)
-    '''stim_start = files.get_index_info(data_folder_name, index_file, item=3)'''
 
     with open(locs_file_path, newline="") as locs_file:
         globalreader = csv.reader(locs_file)
@@ -48,20 +46,12 @@ def read_global_data(data_folder_path, data_folder_name, index_file):
 
         locs = next(globalreader)[1:]
         locs_dict[data_folder_name] = locs
-        
-        '''# Read locs data for baseline_locs_dict
-        baseline_locs = []
-        for row in globalreader:
-            time_point = int(row[0])
-            if time_point <= stim_start:
-                baseline_locs.append(row[1:stim_start + 1])  # Exclude data after stim_start
-        baseline_locs_dict[data_folder_name] = baseline_locs'''
 
         distances = next(globalreader)[1:]
         distances_dict[data_folder_name] = distances
     
     # Insert age and type for all dictionaries
-    data_dicts = [angles_dict, locs_dict, distances_dict, '''baseline_locs_dict''']
+    data_dicts = [angles_dict, locs_dict, distances_dict]
     for data_dict in data_dicts:
         data_dict[data_folder_name].insert(0, mouse_age)
         data_dict[data_folder_name].insert(0, mouse_type)
@@ -69,7 +59,6 @@ def read_global_data(data_folder_path, data_folder_name, index_file):
     return angles_dict, locs_dict, distances_dict
 
 def read_event_data(data_folder_path, data_folder_name, index_file):
-
     analysis_folder = os.path.join(data_folder_path, "analysis")
     ap_output_folder = next((folder for folder in os.listdir(analysis_folder) if folder.startswith("ap-output")), None)
     ap_output_path = os.path.join(analysis_folder, ap_output_folder)
@@ -100,6 +89,8 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
     total_events = 0
     successful_escapes = 0
 
+    escape_success = None
+
     with open(meta_file_path, newline="") as metafile:
         metareader = csv.reader(metafile)
 
@@ -108,12 +99,14 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
             meta_dict[event_name_meta] = row[1:]
             
             escape_time = row[3]  # Assuming escape time is in the fourth column
-            
+
+            # Set escape success based on escape time
             if escape_time == "15.0":
                 escape_success = False
             else:
                 escape_success = True
 
+            # Add additional information to meta_dict
             meta_dict[event_name_meta].insert(0, escape_success)
             meta_dict[event_name_meta].insert(0, mouse_age)
             meta_dict[event_name_meta].insert(0, mouse_type)
@@ -127,65 +120,60 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
         escape_success_data = [mouse_type, mouse_age, escape_success_percentage]
         escape_success_dict[data_folder_name] = escape_success_data
 
-        for event_folder in event_folders:
-            event_name = data_folder_name + "_" + event_folder
+    for event_folder in event_folders:
+        event_name = data_folder_name + "_" + event_folder
 
-            event_folder_path = os.path.join(ap_output_path, event_folder)
-            event_file = os.listdir(event_folder_path)[0]
-            event_file_path = os.path.join(event_folder_path, event_file)
+        event_folder_path = os.path.join(ap_output_path, event_folder)
+        event_file = os.listdir(event_folder_path)[0]
+        event_file_path = os.path.join(event_folder_path, event_file)
 
-            with open(event_file_path, newline="") as eventfile:
+        with open(event_file_path, newline="") as eventfile:
+            eventreader = csv.reader(eventfile)
 
-                eventreader = csv.reader(eventfile)
+            # Skip header row
+            next(eventreader)
 
-                #skip header row
-                next(eventreader)
+            # Read angles and store in angles_dict
+            angles = next(eventreader)[1:]
+            angles_dict[event_name] = angles
 
-                #read angles and store in angles_dict
-                angles = next(eventreader)[1:]
-                angles_dict[event_name] = angles
+            locs = next(eventreader)[1:]
+            locs_dict[event_name] = locs
 
-                locs = next(eventreader)[1:]
-                locs_dict[event_name] = locs
+            distances = next(eventreader)[1:]
+            distances_dict[event_name] = distances
 
-                distances = next(eventreader)[1:]
-                distances_dict[event_name] = distances
+            during_angles = next(eventreader)[1:]
+            angles_during_dict[event_name] = during_angles
 
-                during_angles = next(eventreader)[1:]
-                angles_during_dict[event_name] = during_angles
-            
-                after_angles = next(eventreader)[1:]
-                angles_after_dict[event_name] = after_angles
+            after_angles = next(eventreader)[1:]
+            angles_after_dict[event_name] = after_angles
 
-                prev_esc_locs = next(eventreader)[1:]
-                prev_esc_locs_dict[event_name] = prev_esc_locs
+            prev_esc_locs = next(eventreader)[1:]
+            prev_esc_locs_dict[event_name] = prev_esc_locs
 
-                angles_line = next(eventreader)[1:]
-                angles_line_dict[event_name] = angles_line
-    
-                #convert to floats and store in all_event_angles
-                all_event_angles.append(np.array([float(angle) if angle else np.nan for angle in angles_line]))
-                all_event_locs.append(np.array([loc for loc in locs]))
-                all_event_distances.append(np.array([float(distance) if distance else np.nan for distance in distances]))
+            angles_line = next(eventreader)[1:]
+            angles_line_dict[event_name] = angles_line
 
-                if any(np.isnan([float(dist) if dist else np.nan for dist in distances[150:]])):
-                    escape_success = True
-                else:
-                    escape_success = False
+            # Convert to floats and store in all_event_angles
+            all_event_angles.append(np.array([float(angle) if angle else np.nan for angle in angles_line]))
+            all_event_locs.append(np.array([loc for loc in locs]))
+            all_event_distances.append(np.array([float(distance) if distance else np.nan for distance in distances]))
 
-                data_dicts = [angles_dict, locs_dict, distances_dict, angles_during_dict, angles_after_dict]
+            data_dicts = [angles_dict, locs_dict, distances_dict, angles_during_dict, angles_after_dict, prev_esc_locs_dict]
 
-                for data_dict in data_dicts:
-                        data_dict[event_name].insert(0, escape_success)
-                        data_dict[event_name].insert(0, mouse_age)
-                        data_dict[event_name].insert(0, mouse_type)
+            # Retrieve escape success flag for the current event
+            for data_dict in data_dicts:
+                data_dict[event_name].insert(0, escape_success)
+                data_dict[event_name].insert(0, mouse_age)
+                data_dict[event_name].insert(0, mouse_type)
 
-        average_angles = np.nanmean(all_event_angles, axis=0)
+    return (meta_dict, angles_dict, locs_dict, distances_dict, angles_during_dict, angles_after_dict, prev_esc_locs_dict, escape_success_dict)
+ 
+    '''average_angles = np.nanmean(all_event_angles, axis=0)
         average_angles = np.concatenate(([mouse_type], [mouse_age], average_angles))
         average_distances = np.nanmean(all_event_distances, axis=0)
-        average_distances = np.concatenate(([mouse_type], [mouse_age], average_distances))
-
-        return meta_dict, angles_dict, locs_dict, distances_dict, average_angles, average_distances, angles_during_dict, angles_after_dict, prev_esc_locs_dict, escape_success_dict
+        average_distances = np.concatenate(([mouse_type], [mouse_age], average_distances))'''
         
 def write_collated_global_data(path, data):
 
