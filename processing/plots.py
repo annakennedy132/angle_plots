@@ -229,10 +229,10 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
     ax.bar(x[1], mean2, color='none', edgecolor=color2, linewidth=2, alpha=1, width=bar_width, zorder=2)
     
     # Plot individual data points
-    if points:
-        for i, data in enumerate([data1, data2]):
-            bar = x[i]
-            color = color1 if i == 0 else color2
+    for i, data in enumerate([data1, data2]):
+        bar = x[i]
+        color = color1 if i == 0 else color2
+        if points:
             for value in data:
                 if not np.isnan(value):
                     ax.scatter(bar, value, color=color, marker='o', s=20, zorder=3)

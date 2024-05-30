@@ -562,6 +562,18 @@ class FinalPlots:
                                     "WT", 
                                     "RD1",
                                     color1='tab:blue', color2='mediumseagreen', ylim=None, bar_width=0.5, points=True)
+        
+        fig4, ax = plt.subplots()
+        self.tort_figs.append(fig4)
+        plots.plot_bar_two_groups(fig4, ax, 
+                                    wt_dist_ratio,  
+                                    rd1_dist_ratio, 
+                                    "Mouse type", 
+                                    "Total Distance Covered / Path Length", 
+                                    "Tortuosity of escape paths", 
+                                    "WT", 
+                                    "RD1",
+                                    color1='tab:blue', color2='mediumseagreen', ylim=None, bar_width=0.5, points=False)
 
         '''fig4, ax = plt.subplots()
         self.tort_figs.append(fig4)

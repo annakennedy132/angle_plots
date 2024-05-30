@@ -259,8 +259,7 @@ class AnglePlots:
 
                     event_coord_fig, ax = plt.subplots()
                     self.figs.append(event_coord_fig)
-                    plt.title(f"Heatmap of Coords for Stim Event {i}")
-
+                    plt.suptitle(f"Heatmap of Coords for Stim Event {i}")
                     plots.plot_coords(event_coord_fig, 
                                       ax, 
                                       event_locs, 
