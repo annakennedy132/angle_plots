@@ -214,7 +214,7 @@ def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_la
     return fig
 
 def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_label, bar2_label,
-                        color1='blue', color2='green', ylim=None, bar_width=0.5, points=True, 
+                        color1='blue', color2='green', ylim=None, bar_width=0.2, points=True, 
                         log_y=False, show=False, close=True):
 
     x = np.array([0, 1])
@@ -229,21 +229,27 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
     ax.bar(x[0], mean1, color='none', edgecolor=color1, linewidth=2, alpha=1, width=bar_width, zorder=2)
     ax.bar(x[1], mean2, color='none', edgecolor=color2, linewidth=2, alpha=1, width=bar_width, zorder=2)
     
+    # Function to distribute points evenly
+    def distribute_points(values, bar_position, bar_width, color):
+        unique_values, counts = np.unique(values, return_counts=True)
+        for value, count in zip(unique_values, counts):
+            if count > 1:
+                offsets = np.linspace(-bar_width / 3, bar_width / 3, count)
+            else:
+                offsets = [0]
+            for offset in offsets:
+                ax.scatter(bar_position + offset, value, color="black", marker='o', s=10, zorder=3)
+
     # Plot individual data points
-    for i, data in enumerate([data1, data2]):
-        bar = x[i]
-        color = color1 if i == 0 else color2
-        if points:
-            for value in data:
-                if not np.isnan(value):
-                    ax.scatter(bar, value, color=color, marker='o', s=20, zorder=3)
+    if points:
+        distribute_points(data1, x[0], bar_width, color1)
+        distribute_points(data2, x[1], bar_width, color2)
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels([bar1_label, bar2_label])
-    ax.legend()
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -290,7 +296,7 @@ def plot_binned_bar_chart(fig, ax, data_x, data_y, bin_edges, xlabel, ylabel, ti
 
     return fig
 
-def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, ylabel, title, colors, bar_width=0.35, show=False, close=True):
+def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, ylabel, title, colors, bar_width=0.35, log_y=False, show=False, close=True):
 
     x = np.arange(len(labels))
     bar_positions = np.arange(len(labels))
@@ -310,6 +316,9 @@ def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, 
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
+
+    if log_y:
+        ax.set_yscale('log')
 
     if show:
         plt.show()
@@ -357,7 +366,7 @@ def plot_one_line(fig, ax, data1, label1, color1, xlabel='X', ylabel='Y', title=
 
     return fig, ax
 
-def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color='black', mean_marker='*', x_limits=None, y_limits=None, show=False, close=True):
+def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color='black', mean_marker='o', x_limits=None, y_limits=None, show=False, close=True):
     """
     Plots a scatter plot with given coordinates, mean, and standard deviation lines.
     
@@ -367,28 +376,33 @@ def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color
     - background_color: Color of the plot background.
     - mean_marker: Marker style for the mean point.
     """
+
+    # Parse string coordinates to tuples of floats
+    coords = [parse.parse_coord(coord) for coord in coords]
+    coords = [coord for coord in coords if coord is not np.nan]
+
     # Extract x and y coordinates
     x_coords = [coord[0] for coord in coords]
     y_coords = [coord[1] for coord in coords]
     
     # Calculate mean and standard deviation
-    mean_x = np.mean(x_coords)
-    mean_y = np.mean(y_coords)
-    std_x = np.std(x_coords)
-    std_y = np.std(y_coords)
+    mean_x = np.nanmean(x_coords)
+    mean_y = np.nanmean(y_coords)
+    std_x = np.nanstd(x_coords)
+    std_y = np.nanstd(y_coords)
     
     ax.scatter(x_coords, y_coords, color=point_color, s=50)
     
-    # Plot mean point
-    ax.scatter(mean_x, mean_y, color='red', s=100, marker=mean_marker)
-    
     # Plot standard deviation lines
-    ax.plot([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='black')
-    ax.plot([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='black')
+    ax.plot([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='white')
+    ax.plot([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='white')
     
     # Add '|' markers at the ends of the standard deviation lines
-    ax.scatter([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='black', marker='|', s=100)
-    ax.scatter([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='black', marker='_', s=100)
+    ax.scatter([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='white', marker='|', s=100)
+    ax.scatter([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='white', marker='_', s=100)
+
+    # Plot mean point
+    ax.scatter(mean_x, mean_y, color='red', s=150, marker=mean_marker, zorder=3)
     
     # Set background color
     ax.set_facecolor(background_color)
