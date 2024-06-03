@@ -16,7 +16,7 @@ class PosterPlots:
         self.figs = []
         self.save_figs = save_figs
 
-        '''self.parent_folder = os.path.dirname(self.folder)
+        self.parent_folder = os.path.dirname(self.folder)
         self.global_file = next((os.path.join(self.parent_folder, file) for file in os.listdir(self.parent_folder) if file.endswith("global_data")), None)
         
         self.global_angles_file = next((os.path.join(self.global_file, file) for file in os.listdir(self.global_file) if file.endswith("angles.csv")), None)
@@ -30,15 +30,15 @@ class PosterPlots:
         self.stim_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("stim.csv")), None)
         self.escape_stats_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("escape-stats.csv")), None)
         self.escape_success_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("collated_escape_success.csv")), None)
-'''
-        self.after_angles_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_after_angles.csv"
+        
+        '''self.after_angles_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_after_angles.csv"
         self.during_angles_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_during_angles.csv"
         self.prev_esc_locs_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_prev_esc_locs.csv"
         self.event_locs_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_event_locs.csv"
         self.event_distances_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_event_distances.csv"
         self.event_angles_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_event_angles.csv"
         self.escape_stats_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_escape-stats.csv"
-        self.escape_success_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_escape_success.csv"
+        self.escape_success_file = "/Users/annakennedy/Documents/projects/collated-data/2024-05-01_collated_event_data/collated_escape_success.csv"'''
     
     def plot_global_data(self):
 
@@ -49,7 +49,7 @@ class PosterPlots:
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
         self.figs.append(fig)
 
-        for ax, title, value in zip(axes, ['WT Mice - baseline', 'RD1 Mice - baseline'], [wt_baseline_locs, rd1_baseline_locs]):
+        for ax, title, value in zip(axes, ['WT Mice - baseline', 'rd1 Mice - baseline'], [wt_baseline_locs, rd1_baseline_locs]):
             ax.set_title(title)
             plots.plot_str_coords(fig, ax, value, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=720, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
 
@@ -57,7 +57,7 @@ class PosterPlots:
         self.figs.append(fig)
         ax1.set_title('WT Mice - events')
         plots.plot_str_coords(fig, ax1, wt_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=150, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
-        ax2.set_title('RD1 Mice - events')
+        ax2.set_title('rd1 Mice - events')
         plots.plot_str_coords(fig, ax2, rd1_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=150, xmin=90, xmax=790, ymin=670, ymax=80, colorbar=True, show=False, close=True)
 
     def plot_event_data(self):
@@ -71,24 +71,24 @@ class PosterPlots:
         plt.suptitle(f"Polar Plots Comparing Facing Angles of WT Mice at Baseline, Before, During and After Events")
         self.figs.append(fig)
         ax1.set_title('Baseline - first 3 minutes')
-        #plots.plot_str_polar_chart(fig, ax1, self.wt_baseline_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        plots.plot_str_polar_chart(fig, ax1, self.wt_baseline_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax2.set_title('Before Stimulus')
         plots.plot_str_polar_chart(fig, ax2, wt_before_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax3.set_title("During Stimulus / Time to Escape")
         plots.plot_str_polar_chart(fig, ax3, wt_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
-        ax4.set_title("After Stimulus / Return from Nest")
+        ax4.set_title("After Stimulus / Exit from Nest")
         plots.plot_str_polar_chart(fig, ax4, wt_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
 
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 5), subplot_kw=dict(projection='polar'))
-        plt.suptitle(f"Polar Plots Comparing Facing Angles of RD1 Mice at Baseline, Before, During and After Events")
+        plt.suptitle(f"Polar Plots Comparing Facing Angles of rd1 Mice at Baseline, Before, During and After Events")
         self.figs.append(fig)
         ax1.set_title('Baseline - first 3 minutes')
-        #plots.plot_str_polar_chart(fig, ax1, self.rd1_baseline_angles, bins=36, direction=1, zero="E", show=False, close=True)
+        plots.plot_str_polar_chart(fig, ax1, self.rd1_baseline_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax2.set_title('Before Stimulus')
         plots.plot_str_polar_chart(fig, ax2, rd1_before_angles, bins=36, direction=1, zero="E", show=False, close=True)
         ax3.set_title("During Stimulus / Time to Escape")
         plots.plot_str_polar_chart(fig, ax3, rd1_during_angles, bins=36, direction=1, zero="E", show=False, close=True)
-        ax4.set_title("After Stimulus / Return from Nest")
+        ax4.set_title("After Stimulus / Exit from Nest")
         plots.plot_str_polar_chart(fig, ax4, rd1_after_angles, bins=36, direction=1, zero="E", show=False, close=True)
 
     def plot_stats_data(self):
@@ -103,20 +103,21 @@ class PosterPlots:
         wt_time[wt_time >= 15] = np.nan
         rd1_time[rd1_time >= 15] = np.nan
 
-        fig, ax = plt.subplots(figsize=(3,5))
+        fig, ax = plt.subplots(figsize=(5,5))
         self.figs.append(fig)
         plots.plot_bar_two_groups(fig, ax,
                                 wt_esc_avg, 
                                 rd1_esc_avg,
                                 "Mouse Type", 
-                                "Average Escape Success Rate (%)", 
-                                "Average Escape Success in WT and RD1 Mice", 
+                                "Escape probability (%)", 
                                 "WT", 
-                                "RD1", 
+                                "rd1", 
                                 color1='tab:blue', 
                                 color2='mediumseagreen',
+                                ylim=(-1,102),
                                 bar_width=0.2,
                                 points=True,
+                                error_bars=True,
                                 show=False,
                                 close=True)
 
@@ -127,11 +128,10 @@ class PosterPlots:
                                         wt_time, 
                                         rd1_dist, 
                                         rd1_time, 
-                                        "Distance From Exit at Stim", 
-                                        "Time to Escape (s)", 
-                                        "Effect of Distance From Door on Escape Time in WT and RD1 Mice", 
+                                        "Distance From Exit at Stim (cm)", 
+                                        "Time to Escape (s)",
                                         "WT", 
-                                        "RD1",
+                                        "rd1",
                                         group1_color='tab:blue', 
                                         group2_color='mediumseagreen', 
                                         marker_size=20, 
@@ -145,10 +145,9 @@ class PosterPlots:
                                     wt_false_data, 
                                     rd1_true_data, 
                                     rd1_false_data, 
-                                    ["WT - escape", "WT - no escape", "RD1 - escape", "RD1 - no escape"],
+                                    ["WT - escape", "WT - no escape", "rd1 - escape", "rd1 - no escape"],
                                     "Mouse Type", 
-                                    "Average Time Since Previous Escape", 
-                                    "Effect of Time Since Previous Escape on Chance of Escape at Stimulus", 
+                                    "Time Since Previous Escape",
                                     colors=['tab:blue', 'mediumblue', 'green', 'mediumseagreen'], 
                                     bar_width=0.35, 
                                     show=False, 
@@ -159,11 +158,11 @@ class PosterPlots:
         ax1.set_title('WT Mice - escape')
         plots.scatter_plot_with_stats(fig, ax1, wt_true_locs, point_color='tab:blue', background_color='black', mean_marker='o', x_limits=(80,790), y_limits=(670,70), show=False, close=True)
         ax2.set_title('WT Mice - no escape')
-        plots.scatter_plot_with_stats(fig, ax2, wt_false_locs, point_color='mediumblue', background_color='black', mean_marker='o', x_limits=(80,790), y_limits=(670,70), show=False, close=True)
-        ax3.set_title('RD1 Mice - escape')
-        plots.scatter_plot_with_stats(fig, ax3, rd1_true_locs, point_color='green', background_color='black', mean_marker='o', x_limits=(80,790), y_limits=(670,70), show=False, close=True)
-        ax4.set_title('RD1 Mice - no escape')
-        plots.scatter_plot_with_stats(fig, ax4, rd1_false_locs, point_color='mediumseagreen', background_color='black', mean_marker='o', x_limits=(80,790), y_limits=(670,70), show=False, close=True)
+        plots.scatter_plot_with_stats(fig, ax2, wt_false_locs, point_color='tab:blue', background_color='black', mean_marker='o', x_limits=(80,790), y_limits=(670,70), show=False, close=True)
+        ax3.set_title('rd1 Mice - escape')
+        plots.scatter_plot_with_stats(fig, ax3, rd1_true_locs, point_color='tab:blue', background_color='black', mean_marker='o', x_limits=(80,790), y_limits=(670,70), show=False, close=True)
+        ax4.set_title('rd1 Mice - no escape')
+        plots.scatter_plot_with_stats(fig, ax4, rd1_false_locs, point_color='tab:blue', background_color='black', mean_marker='o', x_limits=(80,790), y_limits=(670,70), show=False, close=True)
 
     def plot_tort_data(self):
         wt_distances, rd1_distances = data.extract_escape_data(self.event_distances_file)
@@ -192,21 +191,25 @@ class PosterPlots:
                 distance_ratio_list.append(dist_ratio)
 
                 if distance_set == wt_distances:
-                    wt_dist_ratio.append(distance_ratio_list)
+                    wt_dist_ratio = distance_ratio_list
                 elif distance_set == rd1_distances:
-                    rd1_dist_ratio.append(distance_ratio_list)
+                    rd1_dist_ratio = distance_ratio_list
                 
-        fig4, ax = plt.subplots(figsize=(3,5))
+        fig4, ax = plt.subplots(figsize=(5,5))
         self.figs.append(fig4)
         plots.plot_bar_two_groups(fig4, ax, 
                                     wt_dist_ratio,  
                                     rd1_dist_ratio, 
                                     "Mouse type", 
-                                    "Total Distance Covered / Path Length", 
+                                    "Total Distance Covered / Path Length (log)", 
                                     "Tortuosity of escape paths", 
                                     "WT", 
-                                    "RD1",
-                                    color1='tab:blue', color2='mediumseagreen', ylim=7, bar_width=0.2)
+                                    "rd1",
+                                    color1='tab:blue', color2='mediumseagreen',
+                                    ylim=None,
+                                    bar_width=0.2,
+                                    points=True,
+                                    log_y=True)
     def plot_prev_tort(self):
         wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc = data.extract_tort_data(self.prev_esc_locs_file)
         
@@ -243,10 +246,9 @@ class PosterPlots:
                                         wt_false_tort, 
                                         rd1_true_tort, 
                                         rd1_false_tort, 
-                                        ["WT - escape", "WT - no escape", "RD1 - escape", "RD1 - no escape"],
+                                        ["WT - escape", "WT - no escape", "rd1 - escape", "rd1 - no escape"],
                                         "Mouse Type", 
-                                        "Tortuosity of Path From Previous Escape to Stimulus (log)", 
-                                        "Effect of Tortuosity of Path Since Previous Escape on Chance of Escape at Stimulus", 
+                                        "Tortuosity of Path From Previous Escape (log)",
                                         colors=['blue', 'mediumblue', 'green', 'mediumseagreen'], 
                                         bar_width=0.35,
                                         log_y=True, 
@@ -264,7 +266,7 @@ class PosterPlots:
         self.figs.append(fig1)
         plots.time_plot(fig1, ax1, norm_true_wt_locs, fps=30, show=False, close=False)
         fig2, ax2 = plt.subplots(figsize=(10,8))
-        fig2.suptitle("Paths of RD1 mice - escape")
+        fig2.suptitle("Paths of rd1 mice - escape")
         self.figs.append(fig2)
         plots.time_plot(fig2, ax2, norm_true_rd1_locs, fps=30, show=False, close=False)
 
@@ -278,7 +280,7 @@ class PosterPlots:
         self.figs.append(fig1)
         plots.time_plot(fig1, ax1, norm_false_wt_locs, fps=30, show=False, close=False)
         fig2, ax2 = plt.subplots(figsize=(10,8))
-        fig2.suptitle("All paths of RD1 mice - no escape")
+        fig2.suptitle("All paths of rd1 mice - no escape")
         self.figs.append(fig2)
         plots.time_plot(fig2, ax2, norm_false_rd1_locs, fps=30, show=False, close=False)
 

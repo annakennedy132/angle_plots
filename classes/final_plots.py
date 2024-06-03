@@ -161,9 +161,9 @@ class FinalPlots:
 
         avg_data = [self.avg_angles_file, self.avg_dist_file, self.avg_speed_file]
         avg_data_esc = [self.avg_angles_esc_file, self.avg_dist_esc_file, self.avg_speed_esc_file]
-        titles = ["Facing angle", "Distance from Exit", "Speed"]
+        titles = ["Facing angle", "Distance from Exit (cm)", "Speed"]
         colours = ["tab:blue", "mediumseagreen", "tab:red"]
-        data_limits = [(-185, 20), (0, 800), (0, 250)]
+        data_limits = [(-185, 20), (0, 55), (0, 250)]
         
         for df, title, colour, limits in zip(avg_data, titles, colours, data_limits):
             df_data = pd.read_csv(df)
@@ -287,7 +287,7 @@ class FinalPlots:
                                         wt_time, 
                                         rd1_dist, 
                                         rd1_time, 
-                                        "Distance From Exit at Stim", 
+                                        "Distance From Exit at Stim (cm)", 
                                         "Time to Escape (s)", 
                                         "Effect of Distance From Door on Escape Time in WT and RD1 Mice", 
                                         "WT", 

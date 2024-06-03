@@ -215,41 +215,37 @@ def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_la
 
 def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_label, bar2_label,
                         color1='blue', color2='green', ylim=None, bar_width=0.2, points=True, 
-                        log_y=False, show=False, close=True):
-
+                        log_y=False, error_bars=False, show=False, close=True):
+    
     x = np.array([0, 1])
     
     mean1 = np.nanmean(data1)
     mean2 = np.nanmean(data2)
+    
+    std1 = np.nanstd(data1) if error_bars else None
+    std2 = np.nanstd(data2) if error_bars else None
 
-    ax.bar(x[0], mean1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1)
-    ax.bar(x[1], mean2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1)
+    ax.bar(x[0], mean1, yerr=std1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1)
+    ax.bar(x[1], mean2, yerr=std2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1)
 
     # Plot bar outlines with opaque edges
     ax.bar(x[0], mean1, color='none', edgecolor=color1, linewidth=2, alpha=1, width=bar_width, zorder=2)
     ax.bar(x[1], mean2, color='none', edgecolor=color2, linewidth=2, alpha=1, width=bar_width, zorder=2)
     
-    # Function to distribute points evenly
-    def distribute_points(values, bar_position, bar_width, color):
-        unique_values, counts = np.unique(values, return_counts=True)
-        for value, count in zip(unique_values, counts):
-            if count > 1:
-                offsets = np.linspace(-bar_width / 3, bar_width / 3, count)
-            else:
-                offsets = [0]
-            for offset in offsets:
-                ax.scatter(bar_position + offset, value, color="black", marker='o', s=10, zorder=3)
-
-    # Plot individual data points
-    if points:
-        distribute_points(data1, x[0], bar_width, color1)
-        distribute_points(data2, x[1], bar_width, color2)
+    for i, data in enumerate([data1, data2]):
+        bar = x[i]
+        color = color1 if i == 0 else color2
+        if points:
+            for value in data:
+                if not np.isnan(value):
+                    ax.scatter(bar, value, color=color, marker='o', s=20, zorder=3)
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels([bar1_label, bar2_label])
+    ax.legend()
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -285,6 +281,7 @@ def plot_binned_bar_chart(fig, ax, data_x, data_y, bin_edges, xlabel, ylabel, ti
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
+    ax.legend()
 
     if y_limit is not None:
         ax.set_ylim(y_limit)

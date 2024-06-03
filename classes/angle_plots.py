@@ -70,12 +70,14 @@ class AnglePlots:
         self.head_x, self.head_coords, self.nose_coords, self.frames, self.stim = data.extract_data(self.df)
 
         #add angles and distance to exit to df using extracted coords
+        conversion_factor = 46.5 / 645
         self.angles, self.exit_coords = angles.get_angles_for_plot(self.video_file, self.head_coords, self.nose_coords, thumbnail_scale=0.6)
         self.distances_exit = [
-        distance.calc_distance_to_exit(row['nose_x'] if not pd.isna(row['nose_x']) else row['head_x'],
-                                       row['nose_y'] if not pd.isna(row['nose_y']) else row['head_y'],
-                                       self.exit_coords)
-                                       for _, row in self.df.iterrows()]
+            distance.calc_distance_to_exit(row['nose_x'] if not pd.isna(row['nose_x']) else row['head_x'],
+                                           row['nose_y'] if not pd.isna(row['nose_y']) else row['head_y'],
+                                           self.exit_coords) * conversion_factor
+            for _, row in self.df.iterrows()
+        ]
         
         self.df['distance from nose to exit'] = self.distances_exit
         self.df['angle difference'] = self.angles
@@ -134,9 +136,9 @@ class AnglePlots:
                         self.stim,
                         "mediumseagreen",
                         x_label='Time (s)', 
-                        data1_label='Distance from Exit', 
+                        data1_label='Distance from Exit (cm)', 
                         data2_label='Stim (on/off)',
-                        data1_lim=(0, 800),
+                        data1_lim=(0, 55),
                         show=show)
 
         polar_fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
@@ -236,9 +238,9 @@ class AnglePlots:
                                     event_distances, 
                                     event_stim, "mediumseagreen",
                                     x_label='Time (s)', 
-                                    data1_label='Distance from Exit', 
+                                    data1_label='Distance from Exit (cm)', 
                                     data2_label='Stim (on/off)',
-                                    data1_lim=(0, 800), show=show)
+                                    data1_lim=(0, 55), show=show)
                     
                     #plot polar event plot
                     before_stim_angles = self.angles_polar[start:event_t0]
