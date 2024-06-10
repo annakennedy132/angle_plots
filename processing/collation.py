@@ -62,13 +62,16 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
     analysis_folder = os.path.join(data_folder_path, "analysis")
     ap_output_folder = next((folder for folder in os.listdir(analysis_folder) if folder.startswith("ap-output")), None)
     ap_output_path = os.path.join(analysis_folder, ap_output_folder)
+    et_output_folder = next((folder for folder in os.listdir(analysis_folder) if folder.startswith("et-output")), None)
+    et_output_path = os.path.join(analysis_folder, et_output_folder)
 
     files_list = os.listdir(ap_output_path)
 
     meta_file_name = [file for file in files_list if file.endswith("escape_stats.csv")][0]
     meta_file_path = os.path.join(ap_output_path, meta_file_name)
 
-    event_folders = [event_folder for event_folder in os.listdir(ap_output_path) if os.path.isdir(os.path.join(ap_output_path, event_folder))]
+    event_folders_ap = [event_folder for event_folder in os.listdir(ap_output_path) if os.path.isdir(os.path.join(ap_output_path, event_folder))]
+    event_folders_et = [event_folder for event_folder in os.listdir(et_output_path) if os.path.isdir(os.path.join(et_output_path, event_folder))]
 
     meta_dict = {}
     angles_dict = {}
@@ -79,9 +82,11 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
     angles_after_dict = {}
     escape_success_dict = {}
     prev_esc_locs_dict = {}
+    speeds_dict = {}
     all_event_angles = []
     all_event_locs = []
     all_event_distances = []
+    all_event_speeds = []
 
     mouse_type = files.get_index_info(data_folder_name, index_file, item=1)
     mouse_age = files.get_index_info(data_folder_name, index_file, item=2)
@@ -122,9 +127,9 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
         escape_success_data = [mouse_type, mouse_age, escape_success_percentage]
         escape_success_dict[data_folder_name] = escape_success_data
     
-    event_folders.sort(key=lambda x: int(x.split('-')[1]))
+    event_folders_ap.sort(key=lambda x: int(x.split('-')[1]))
 
-    for i, event_folder in enumerate(event_folders):
+    for i, event_folder in enumerate(event_folders_ap):
         event_name = data_folder_name + "_" + event_folder
 
         event_folder_path = os.path.join(ap_output_path, event_folder)
@@ -171,13 +176,40 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
                 data_dict[event_name].insert(0, escape_success_list[i])
                 data_dict[event_name].insert(0, mouse_age)
                 data_dict[event_name].insert(0, mouse_type)
+    
+    event_folders_et.sort(key=lambda x: int(x.split('-')[1]))
+
+    for i, event_folder in enumerate(event_folders_et):
+        event_name = data_folder_name + "_" + event_folder
+
+        event_folder_path = os.path.join(et_output_path, event_folder)
+        event_file = os.listdir(event_folder_path)[0]
+        event_file_path = os.path.join(event_folder_path, event_file)
+
+        with open(event_file_path, newline="") as eventfile:
+            eventreader = csv.reader(eventfile)
+
+            # Skip header row
+            next(eventreader)
+
+            # Read speeds and store in speeds dict
+            speeds = next(eventreader)[1:601]
+            speeds_dict[event_name] = speeds
+
+            all_event_speeds.append(np.array([float(speed) if speed else np.nan for speed in speeds]))
+
+            speeds_dict[event_name].insert(0, escape_success_list[i])
+            speeds_dict[event_name].insert(0, mouse_age)
+            speeds_dict[event_name].insert(0, mouse_type)
 
     average_angles = np.nanmean(all_event_angles, axis=0)
     average_angles = np.concatenate(([mouse_type], [mouse_age], average_angles))
     average_distances = np.nanmean(all_event_distances, axis=0)
     average_distances = np.concatenate(([mouse_type], [mouse_age], average_distances))
+    average_speeds = np.nanmean(all_event_speeds, axis=0)
+    average_speeds = np.concatenate(([mouse_type], [mouse_age], average_speeds))
 
-    return (meta_dict, angles_dict, locs_dict, distances_dict, angles_during_dict, angles_after_dict, prev_esc_locs_dict, escape_success_dict, average_angles, average_distances)
+    return (meta_dict, angles_dict, locs_dict, distances_dict, speeds_dict, angles_during_dict, angles_after_dict, prev_esc_locs_dict, escape_success_dict, average_angles, average_distances, average_speeds)
         
 def write_collated_global_data(path, data):
 

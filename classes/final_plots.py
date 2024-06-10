@@ -28,13 +28,13 @@ class FinalPlots:
         self.event_locs_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("locs.csv")), None)
         self.event_distances_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("event_distances.csv")), None)
         self.event_angles_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("event_angles.csv")), None)
+        self.event_speeds_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("event_speeds.csv")), None)
         self.stim_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("stim.csv")), None)
         self.escape_stats_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("escape-stats.csv")), None)
         self.escape_success_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("collated_escape_success.csv")), None)
         self.avg_angles_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("avg_angles.csv")), None)
         self.avg_dist_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("avg_distances.csv")), None)
-        #self.avg_speed_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("speeds_avg.csv")), None)
-        self.stim_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("stim.csv")), None)
+        self.avg_speeds_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("avg_speeds.csv")), None)
 
     def plot_global_data(self):
 
@@ -112,20 +112,27 @@ class FinalPlots:
         wt_true_angles, rd1_true_angles, wt_false_angles, rd1_false_angles = data.extract_avg_data(self.event_angles_file, escape=True)
         wt_avg_dist, rd1_avg_dist = data.extract_avg_data(self.avg_dist_file, escape=False)
         wt_true_dist, rd1_true_dist, wt_false_dist, rd1_false_dist = data.extract_avg_data(self.event_distances_file, escape=True)
+        wt_avg_speeds, rd1_avg_speeds = data.extract_avg_data(self.avg_speeds_file, escape=False)
+        wt_true_speeds, rd1_true_speeds, wt_false_speeds, rd1_false_speeds = data.extract_avg_data(self.event_speeds_file, escape=True)
         
-        stim_data = [0]*150 + [1]*300 + [0]*149
+        stim_data = [0]*150 + [1]*300 + [0]*150
         frame_time = (1./self.fps)
         norm_event_time = np.arange(-self.t_minus, (self.length + self.t_plus), frame_time)
-        norm_event_time = norm_event_time[:len(stim_data)]
 
         # Compute averages using list comprehensions
         avg_angle_data = [
             [0 - np.nanmean([abs(lst[i]) if i < len(lst) else np.nan for lst in wt_avg_angles]) for i in range(max(map(len, wt_avg_angles)))],
             [0 - np.nanmean([abs(lst[i]) if i < len(lst) else np.nan for lst in rd1_avg_angles]) for i in range(max(map(len, rd1_avg_angles)))]
         ]
+        
         avg_dist_data = [
             [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in wt_avg_dist]) for i in range(max(map(len, wt_avg_dist)))],
             [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in rd1_avg_dist]) for i in range(max(map(len, rd1_avg_dist)))]
+        ]
+
+        avg_speeds_data = [
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in wt_avg_speeds]) for i in range(max(map(len, wt_avg_speeds)))],
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in rd1_avg_speeds]) for i in range(max(map(len, rd1_avg_speeds)))]
         ]
 
         avg_esc_angle_data = [
@@ -134,6 +141,7 @@ class FinalPlots:
             [0 - np.nanmean([abs(lst[i]) if i < len(lst) else np.nan for lst in rd1_true_angles]) for i in range(max(map(len, rd1_true_angles)))],
             [0 - np.nanmean([abs(lst[i]) if i < len(lst) else np.nan for lst in rd1_false_angles]) for i in range(max(map(len, rd1_false_angles)))]
         ]
+        
         avg_esc_dist_data = [
             [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in wt_true_dist]) for i in range(max(map(len, wt_true_dist)))],
             [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in wt_false_dist]) for i in range(max(map(len, wt_false_dist)))],
@@ -141,19 +149,26 @@ class FinalPlots:
             [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in rd1_false_dist]) for i in range(max(map(len, rd1_false_dist)))],
         ]
 
-        titles = ["Facing angle", "Distance from Exit (cm)"]
-        colours = ["tab:blue", "mediumseagreen"]
-        data_limits = [(-185, 20), (0, 55)]
+        avg_esc_speeds_data = [
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in wt_true_speeds]) for i in range(max(map(len, wt_true_speeds)))],
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in wt_false_speeds]) for i in range(max(map(len, wt_false_speeds)))],
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in rd1_true_speeds]) for i in range(max(map(len, rd1_true_speeds)))],
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in rd1_false_speeds]) for i in range(max(map(len, rd1_false_speeds)))],
+        ]
 
-        for df, title, colour, limits in zip([avg_angle_data, avg_dist_data], titles, colours, data_limits):
+        titles = ["Facing angle", "Distance from Exit (cm)", "Speed"]
+        colours = ["tab:blue", "mediumseagreen", "red"]
+        data_limits = [(-185, 20), (0, 55), (0,255)]
+
+        for df, title, colour, limits in zip([avg_angle_data, avg_dist_data, avg_speeds_data], titles, colours, data_limits):
             fig, axes = plt.subplots(1, 2, figsize=(12, 5))
             fig.suptitle(f"Average {title} at Stim Event")
             subtitles = ["WT", "rd1"]
             for values, ax, subtitle in zip(df, axes, subtitles):
-                plots.two_plots(fig, ax, norm_event_time, values, stim_data, colour, "Time (seconds)", title, "Stimulus", limits, title=subtitle)
+                plots.two_plots(fig, ax, norm_event_time, values, stim_data, colour, "Time (seconds)", title, "Stimulus", limits, title=subtitle, )
             self.figs.append(fig)
 
-        for df, title, colour, limits in zip([avg_esc_angle_data, avg_esc_dist_data], titles, colours, data_limits):
+        for df, title, colour, limits in zip([avg_esc_angle_data, avg_esc_dist_data, avg_esc_speeds_data], titles, colours, data_limits):
             fig, axes = plt.subplots(2, 2, figsize=(12, 10))
             fig.suptitle(f"Average {title} at Stim Event")
             subtitles = ["WT - escape", "WT - no escape", "rd1 - escape", "rd1 - no escape"]

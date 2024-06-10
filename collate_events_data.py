@@ -14,11 +14,13 @@ def run():
     angles_data = {}
     locs_data = {}
     dist_data = {}
+    speeds_data = {}
     during_angles_data = {}
     after_angles_data = {}
     prev_esc_locs_data = {}
     average_angles_data = {}
     average_dist_data = {}
+    average_speeds_data = {}
     escape_stats_data = {}
 
     if INDEX_FILE is not None:
@@ -37,18 +39,20 @@ def run():
 
             try:
 
-                meta, angles, locs, distances, during_angles, after_angles, prev_esc_locs, escape_stats, average_angles, average_distances = collation.read_event_data(path, folder_name, INDEX_FILE)
+                meta, angles, locs, distances, speeds, during_angles, after_angles, prev_esc_locs, escape_stats, average_angles, average_distances, average_speeds = collation.read_event_data(path, folder_name, INDEX_FILE)
 
                 meta_data.update(meta)
                 angles_data.update(angles)
                 locs_data.update(locs)
                 dist_data.update(distances)
+                speeds_data.update(speeds)
                 during_angles_data.update(during_angles)
                 after_angles_data.update(after_angles)
                 prev_esc_locs_data.update(prev_esc_locs)
                 escape_stats_data.update(escape_stats)
                 average_angles_data[folder_name] = average_angles
                 average_dist_data[folder_name] = average_distances
+                average_speeds_data[folder_name] = average_speeds
 
                 print(f"Successfuly collated {folder_name}")
 
@@ -67,6 +71,9 @@ def run():
 
         collated_locs_path = os.path.join(output_folder, "collated_event_locs.csv")
         collation.write_collated_event_data(collated_locs_path, locs_data)
+
+        collated_speeds_path = os.path.join(output_folder, "collated_event_speeds.csv")
+        collation.write_collated_event_data(collated_speeds_path, speeds_data)
 
         collated_dist_path = os.path.join(output_folder, "collated_event_distances.csv")
         collation.write_collated_event_data(collated_dist_path, dist_data)
@@ -88,6 +95,9 @@ def run():
 
         collated_avg_dist_path = os.path.join(output_folder, "collated_avg_distances.csv")
         collation.write_collated_event_data(collated_avg_dist_path, average_dist_data)
+
+        collated_avg_speeds_path = os.path.join(output_folder, "collated_avg_speeds.csv")
+        collation.write_collated_event_data(collated_avg_speeds_path, average_speeds_data)
 
 def parse_args():
 

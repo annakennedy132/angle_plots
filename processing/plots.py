@@ -4,7 +4,7 @@ import pandas as pd
 import seaborn as sns
 from utils import parse
 
-def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, data2_label, data1_lim, title=None, stim_lim=1.2, show=False, close=True):
+def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, data2_label, data1_lim, title=None, stim_lim=1.2, show=False, close=True, show_axes="both"):
     
     color = data1_colour
     ax1.set_xlabel(x_label)
@@ -26,6 +26,17 @@ def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, dat
 
     if title:
         ax1.set_title(title)
+
+    if show_axes == 'both':
+        ax1.spines['right'].set_visible(False)
+        ax1.spines['top'].set_visible(False)
+    elif show_axes == 'none':
+        ax1.spines['left'].set_visible(False)
+        ax1.spines['right'].set_visible(False)
+        ax1.spines['top'].set_visible(False)
+        ax1.spines['bottom'].set_visible(False)
+        ax1.get_xaxis().set_visible(False)
+        ax1.get_yaxis().set_visible(False)
     
     if show: plt.show()
     if close: plt.close()
