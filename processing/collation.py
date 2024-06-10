@@ -88,8 +88,8 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
 
     total_events = 0
     successful_escapes = 0
-
     escape_success = None
+    escape_success_list = []
 
     with open(meta_file_path, newline="") as metafile:
         metareader = csv.reader(metafile)
@@ -115,12 +115,16 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
             if escape_success:
                 successful_escapes += 1
 
+            escape_success_list.append(escape_success)
+
         escape_success_percentage = (successful_escapes / total_events) * 100 if total_events > 0 else 0
 
         escape_success_data = [mouse_type, mouse_age, escape_success_percentage]
         escape_success_dict[data_folder_name] = escape_success_data
+    
+    event_folders.sort(key=lambda x: int(x.split('-')[1]))
 
-    for event_folder in event_folders:
+    for i, event_folder in enumerate(event_folders):
         event_name = data_folder_name + "_" + event_folder
 
         event_folder_path = os.path.join(ap_output_path, event_folder)
@@ -134,13 +138,13 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
             next(eventreader)
 
             # Read angles and store in angles_dict
-            angles = next(eventreader)[1:]
+            angles = next(eventreader)[1:601]
             angles_dict[event_name] = angles
 
-            locs = next(eventreader)[1:]
+            locs = next(eventreader)[1:601]
             locs_dict[event_name] = locs
 
-            distances = next(eventreader)[1:]
+            distances = next(eventreader)[1:601]
             distances_dict[event_name] = distances
 
             during_angles = next(eventreader)[1:]
@@ -152,7 +156,7 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
             prev_esc_locs = next(eventreader)[1:]
             prev_esc_locs_dict[event_name] = prev_esc_locs
 
-            angles_line = next(eventreader)[1:]
+            angles_line = next(eventreader)[1:601]
             angles_line_dict[event_name] = angles_line
 
             # Convert to floats and store in all_event_angles
@@ -164,16 +168,16 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
 
             # Retrieve escape success flag for the current event
             for data_dict in data_dicts:
-                data_dict[event_name].insert(0, escape_success)
+                data_dict[event_name].insert(0, escape_success_list[i])
                 data_dict[event_name].insert(0, mouse_age)
                 data_dict[event_name].insert(0, mouse_type)
 
-    return (meta_dict, angles_dict, locs_dict, distances_dict, angles_during_dict, angles_after_dict, prev_esc_locs_dict, escape_success_dict)
- 
-    '''average_angles = np.nanmean(all_event_angles, axis=0)
-        average_angles = np.concatenate(([mouse_type], [mouse_age], average_angles))
-        average_distances = np.nanmean(all_event_distances, axis=0)
-        average_distances = np.concatenate(([mouse_type], [mouse_age], average_distances))'''
+    average_angles = np.nanmean(all_event_angles, axis=0)
+    average_angles = np.concatenate(([mouse_type], [mouse_age], average_angles))
+    average_distances = np.nanmean(all_event_distances, axis=0)
+    average_distances = np.concatenate(([mouse_type], [mouse_age], average_distances))
+
+    return (meta_dict, angles_dict, locs_dict, distances_dict, angles_during_dict, angles_after_dict, prev_esc_locs_dict, escape_success_dict, average_angles, average_distances)
         
 def write_collated_global_data(path, data):
 
@@ -204,75 +208,3 @@ def write_collated_event_data(path, data):
 
         #write the data rows, transposed so it is in columns
         writer.writerows(zip(*data.values()))
-
-def create_average_csv(csv):
-    filename = os.path.splitext(os.path.basename(csv))[0]
-    folder_path = os.path.dirname(csv)
-    avg_file = filename.rsplit("_", 1)[-1]
-
-    # Read the data
-    df = pd.read_csv(csv, header=None)
-
-    # Extract mouse types and data
-    mouse_types = df.iloc[1].tolist()
-    data = df.iloc[3:].astype(float)
-
-    # Calculate row averages for each mouse type
-    averages = {}
-    for mouse_type in set(mouse_types):
-        columns = [i for i, mt in enumerate(mouse_types) if mt == mouse_type]
-        averages[mouse_type] = data.iloc[:, columns].mean(axis=1)
-
-    # Create DataFrame with row averages
-    averages_df = pd.DataFrame(averages)
-
-    # Save the processed data to a new CSV file
-    output_file = os.path.join(folder_path, avg_file + "_avg.csv")
-    averages_df.to_csv(output_file, header=True, index=False, mode='w')  # Set mode to 'w'
-
-def create_average_csv_escape_success(csv):
-
-    filename = os.path.splitext(os.path.basename(csv))[0]
-    folder_path = os.path.dirname(csv)
-    avg_file = filename.rsplit("_", 1)[-1]
-
-    # Read the data
-    df = pd.read_csv(csv)
-
-    # Extract mouse types, escape success, and data
-    mouse_types = df.iloc[0].tolist()
-    escape_success = df.iloc[2].tolist()
-    data = df.iloc[3:].astype(float)
-
-    # Initialize dictionaries to store columns for each category
-    columns = {
-        "wt_true": [], "wt_false": [],
-        "rd1_true": [], "rd1_false": [],
-    }
-
-    # Iterate through columns
-    for col, (mt, esc) in enumerate(zip(mouse_types, escape_success)):
-        if mt == "rd1" and esc:
-            columns["rd1_true"].append(data.iloc[:, col])
-        elif mt.startswith("rd1") and not esc:
-            columns["rd1_false"].append(data.iloc[:, col])
-        elif mt == "wt" and esc:
-            columns["wt_true"].append(data.iloc[:, col])
-        elif mt == "wt" and not esc:
-            columns["wt_false"].append(data.iloc[:, col])
-
-    # Calculate row averages for each category
-    row_averages = {}
-    for key, cols in columns.items():
-        if cols:  # Check if there are any columns in this category
-            row_averages[key] = pd.concat(cols, axis=1).mean(axis=1)
-        else:
-            row_averages[key] = pd.Series([])  # Empty series
-
-    # Create DataFrame with row averages
-    averages_df = pd.DataFrame(row_averages)
-
-    # Save the processed data to a new CSV file
-    output_file = os.path.join(folder_path, avg_file + "_avg_escape_success.csv")
-    averages_df.to_csv(output_file, header=True, index=False, mode='w')  # Set mode to 'w'
-

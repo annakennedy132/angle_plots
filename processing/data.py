@@ -54,12 +54,12 @@ def extract_data_columns(file, data_start, data_end=None, escape=False):
             escape_success_col = df.iloc[3, col]
                 
             if mouse_type == 'wt':
-                if escape_success_col == 'True':
+                if escape_success_col == 'True' or escape_success_col == "TRUE":
                         wt_true.extend(column_data)
                 else:
                         wt_false.extend(column_data)
             elif mouse_type == 'rd1':
-                if escape_success_col == 'True':
+                if escape_success_col == 'True' or escape_success_col == "TRUE":
                         rd1_true.extend(column_data)
                 else:
                         rd1_false.extend(column_data)
@@ -127,19 +127,22 @@ def extract_data_rows_esc(file, row):
                     except ValueError:
                         pass
 
-            if mouse_type == "wt" and esc_success == "True":
-                wt_true_data.append(column_data)
-            elif mouse_type == "wt" and esc_success == "False":
-                wt_false_data.append(column_data)
-            elif mouse_type == "rd1" and esc_success == "True":
-                rd1_true_data.append(column_data)
-            elif mouse_type == "rd1" and esc_success == "False":
-                rd1_false_data.append(column_data)
+            if mouse_type == "wt":
+                if esc_success == "True" or esc_success == "TRUE":
+                    wt_true_data.append(column_data)
+                elif esc_success == "False" or esc_success == "FALSE":
+                    wt_false_data.append(column_data)
+            elif mouse_type == "rd1":
+                if esc_success == "True" or esc_success == "TRUE":
+                    rd1_true_data.append(column_data)
+                elif esc_success == "False" or esc_success == "FALSE":
+                    rd1_false_data.append(column_data)
         
         return wt_true_data, wt_false_data, rd1_true_data, rd1_false_data
     
 def extract_escape_data(file):
     df = pd.read_csv(file, header=None, low_memory=False)
+    min_escape_frames = 5
 
     wt_data = [[] for _ in range(len(df.columns))]
     rd1_data = [[] for _ in range(len(df.columns))]
@@ -152,14 +155,17 @@ def extract_escape_data(file):
 
         column_data = [float(x) if x != 'nan' else np.nan for x in column_data]
 
-        # Find the index of the first NaN value
-        nan_index = next((i for i, x in enumerate(column_data) if pd.isna(x)), len(column_data))
+        escape_index = len(column_data)
+        for i in range(0, len(column_data) - min_escape_frames + 1):
+            if all(np.isnan(column_data[i: i + min_escape_frames])):
+                escape_index = i
+                break
 
         if escape_success_col == 'TRUE' or escape_success_col == "True":  # Only include columns with "True" in escape_success_col
             if mouse_type == 'wt':
-                wt_data[col] = column_data[:nan_index]
+                wt_data[col] = column_data[:escape_index]
             elif mouse_type.startswith('rd1'):
-                rd1_data[col] = column_data[:nan_index]
+                rd1_data[col] = column_data[:escape_index]
 
     wt_data = [data for data in wt_data if data]
     rd1_data = [data for data in rd1_data if data]
@@ -168,6 +174,7 @@ def extract_escape_data(file):
 
 def extract_escape_locs(file, escape=False):
     df = pd.read_csv(file, header=None, low_memory=False)
+    min_escape_frames = 5
 
     wt_data = [[] for _ in range(len(df.columns))]
     rd1_data = [[] for _ in range(len(df.columns))]
@@ -178,20 +185,26 @@ def extract_escape_locs(file, escape=False):
         column_data = df.iloc[154:, col]
         escape_success_col = df.iloc[3, col]
         column_data = [parse.parse_coord(coord) for coord in column_data]
-        nan_index = next((i for i, (x, y) in enumerate(column_data) if np.isnan(x) or np.isnan(y)), len(column_data))
+        column_data_x = [coord[0] for coord in column_data]
+        
+        escape_index = len(column_data_x)
+        for i in range(0, len(column_data_x) - min_escape_frames + 1):
+            if all(np.isnan(column_data_x[i: i + min_escape_frames])):
+                escape_index = i
+                break
 
         if escape:
-            if escape_success_col == 'True':
+            if escape_success_col == 'True' or escape_success_col == "TRUE":
                 if mouse_type == 'wt':
-                    wt_data[col] = column_data[:nan_index]
+                    wt_data[col] = column_data[:escape_index]
                 elif mouse_type.startswith('rd1'):
-                    rd1_data[col] = column_data[:nan_index]
+                    rd1_data[col] = column_data[:escape_index]
         else:
-            if escape_success_col == 'False':
+            if escape_success_col == 'False' or escape_success_col == "FALSE":
                 if mouse_type == 'wt':
-                    wt_data[col] = column_data[:nan_index]
+                    wt_data[col] = column_data[:escape_index]
                 elif mouse_type.startswith('rd1'):
-                    rd1_data[col] = column_data[:nan_index]
+                    rd1_data[col] = column_data[:escape_index]
 
     # Remove empty lists (due to skipped columns)
     wt_data = [data for data in wt_data if data]
@@ -214,12 +227,12 @@ def extract_tort_data(file):
 
         column_data = [float(x) for x in column_data if pd.notna(x) and x != 'nan']
 
-        if escape_success_col == 'True':  # Only include columns with "True" in escape_success_col
+        if escape_success_col == 'True' or  escape_success_col == "TRUE":  # Only include columns with "True" in escape_success_col
             if mouse_type == 'wt':
                 wt_true_data[col] = column_data
             elif mouse_type.startswith('rd1'):
                 rd1_true_data[col] = column_data
-        if escape_success_col == 'False':  # Only include columns with "True" in escape_success_col
+        if escape_success_col == 'False' or escape_success_col == "FALSE":  # Only include columns with "True" in escape_success_col
             if mouse_type == 'wt':
                 wt_false_data[col] = column_data
             elif mouse_type.startswith('rd1'):
@@ -231,7 +244,61 @@ def extract_tort_data(file):
     rd1_false_data = [data for data in rd1_false_data if data]
 
     return wt_true_data, wt_false_data, rd1_true_data, rd1_false_data
-    
+
+def extract_avg_data(file, escape=False):
+    df = pd.read_csv(file, header=None, low_memory=False)
+
+    wt_data = [[] for _ in range(len(df.columns))]
+    rd1_data = [[] for _ in range(len(df.columns))]
+
+    wt_true_data = [[] for _ in range(len(df.columns))]
+    wt_false_data = [[] for _ in range(len(df.columns))]
+    rd1_true_data = [[] for _ in range(len(df.columns))]
+    rd1_false_data = [[] for _ in range(len(df.columns))]
+
+    for col in range(len(df.columns)):
+        mouse_type = df.iloc[1, col]
+        if escape:
+            column_data = df.iloc[4:, col]
+            escape_success_col = df.iloc[3, col]
+        else:
+            column_data = df.iloc[3:, col]
+        
+        # Convert column data to float and filter out null values
+        column_data = [float(x) if pd.notnull(x) else float('nan') for x in column_data]
+
+        if escape:
+            if str(escape_success_col).strip().lower() == 'true':
+                if mouse_type == 'wt':
+                    wt_true_data[col] = column_data
+                elif mouse_type.startswith('rd1'):
+                    rd1_true_data[col] = column_data
+            elif str(escape_success_col).strip().lower() == 'false':
+                if mouse_type == 'wt':
+                    wt_false_data[col] = column_data
+                elif mouse_type.startswith('rd1'):
+                    rd1_false_data[col] = column_data
+        
+        else:
+            if mouse_type == 'wt':
+                wt_data[col] = column_data
+            elif mouse_type.startswith('rd1'):
+                rd1_data[col] = column_data
+
+    # Remove empty lists
+    wt_data = [data for data in wt_data if data]
+    rd1_data = [data for data in rd1_data if data]
+
+    wt_true_data = [data for data in wt_true_data if data]
+    wt_false_data = [data for data in wt_false_data if data]
+    rd1_true_data = [data for data in rd1_true_data if data]
+    rd1_false_data = [data for data in rd1_false_data if data]
+
+    if escape:
+        return wt_true_data, wt_false_data, rd1_true_data, rd1_false_data
+    else:
+        return wt_data, rd1_data
+
 def normalize_length(coord_sets):
     max_length = max([len(coord_set) for coord_set in coord_sets])
         

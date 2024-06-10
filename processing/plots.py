@@ -30,6 +30,45 @@ def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, dat
     if show: plt.show()
     if close: plt.close()
 
+def plot_two_lines(fig, ax, data1, data2, label1, label2, color1, color2, xlabel='X', ylabel='Y', title='Line Plot', ylim=None, show=False, close=True):
+    x = np.arange(len(data1))
+    ax.plot(x, data1, color=color1, label=label1)
+    ax.plot(x, data2, color=color2, label=label2)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(True)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    if show:
+        plt.show()
+    if close:
+        plt.close()
+
+    return fig, ax
+
+def plot_one_line(fig, ax, data1, label1, color1, xlabel='X', ylabel='Y', title='Line Plot', xlim=None, ylim=None, show=False, close=True):
+    x = np.arange(len(data1))
+    ax.plot(x, data1, color=color1, label=label1)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(True)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    if show:
+        plt.show()
+    if close:
+        plt.close()
+
+    return fig, ax
+
 def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, close=True):
     
     angles_float = [float(angle) for angle in angles if angle is not None]
@@ -118,8 +157,10 @@ def plot_str_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=Fals
 
     return fig, ax
 
-def plot_str_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, colorbar=False, show_coord=None,  show=True, close=False):
+def plot_str_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, show_coord=None, show=True, close=False, show_axes='none', colorbar=True):
     
+    fig.set_constrained_layout(True)
+
     # Parse string coordinates to tuples of floats
     coords = [parse.parse_coord(coord) for coord in coords]
     coords = [coord for coord in coords if coord is not np.nan]
@@ -142,12 +183,26 @@ def plot_str_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vm
     if show_coord:
         ax.scatter(show_coord[0], show_coord[1], color='red', marker="x")
 
+    # Customize axes visibility
+    if show_axes == 'both':
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+    elif show_axes == 'none':
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+
     if show: plt.show()
     if close: plt.close(fig)
 
     return fig
 
-def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700,50), show=False, close=True):
+def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700,50), show=False, close=True, show_axes='none', colorbar=True):
+    fig.set_constrained_layout(True)
+
     total_time = len(coordinates[0]) / fps
     
     colors = np.linspace(0, total_time, len(coordinates[0]))
@@ -155,8 +210,9 @@ def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700,50), show=False
     for coords in coordinates:
         ax.scatter([coord[0] for coord in coords], [coord[1] for coord in coords], c=colors, cmap='viridis', s=0.25, vmin=0, vmax=total_time)
 
-    colorbar = plt.colorbar(ax.collections[0], ax=ax)
-    colorbar.set_label('Time (s)')
+    if colorbar:
+        colorbar = plt.colorbar(ax.collections[0], ax=ax)
+        colorbar.set_label('Time (s)')
 
     ax.set_xlabel("x coordinates")
     ax.set_ylabel("y coordinates") 
@@ -165,6 +221,18 @@ def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700,50), show=False
         ax.set_xlim(xlim)
     if ylim is not None:
         ax.set_ylim(ylim)
+
+    # Customize axes visibility
+    if show_axes == 'both':
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+    elif show_axes == 'none':
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
     
     if show:
         plt.show()
@@ -174,7 +242,7 @@ def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700,50), show=False
 
     return fig
 
-def plot_scatter_trendline(fig, ax, data1_x, data1_y, x_label, y_label, title, color='blue', marker_size=20, show=False, close=True):
+def plot_scatter_trendline(fig, ax, data1_x, data1_y, x_label, y_label, title=None, color='blue', marker_size=20, show=False, close=True, show_axes='both'):
     sns.regplot(x=data1_x, y=data1_y, ax=ax, scatter=True,
                 scatter_kws={'color': color, 'alpha': 0.7, 's': marker_size}, 
                 line_kws={'color': color}, ci=None)
@@ -182,8 +250,18 @@ def plot_scatter_trendline(fig, ax, data1_x, data1_y, x_label, y_label, title, c
     ax.set_title(title)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    
-    ax.grid(True, alpha=0.3)
+
+    # Customize axes visibility
+    if show_axes == 'both':
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+    elif show_axes == 'none':
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
 
     if show: 
         plt.show()
@@ -192,8 +270,8 @@ def plot_scatter_trendline(fig, ax, data1_x, data1_y, x_label, y_label, title, c
 
     return fig
 
-def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_label, y_label, title, group1_label, group2_label, 
-                           group1_color='blue', group2_color='green', marker_size=20, show=False, close=True):
+def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_label, y_label, group1_label, group2_label, 
+                           group1_color='blue', group2_color='green', marker_size=20, show=False, close=True, title=None, show_axes='both'):
     sns.regplot(x=data1_x, y=data1_y, ax=ax, scatter=True, label=group1_label,
                 scatter_kws={'color': group1_color, 'alpha': 0.7, 's': marker_size},line_kws={'color': group1_color}, ci=None)
     
@@ -203,6 +281,18 @@ def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_la
     ax.set_title(title)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
+
+    # Customize axes visibility
+    if show_axes == 'both':
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+    elif show_axes == 'none':
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
     
     ax.legend()
 
@@ -213,11 +303,11 @@ def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_la
 
     return fig
 
-def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_label, bar2_label,
+def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, bar1_label, bar2_label,
                         color1='blue', color2='green', ylim=None, bar_width=0.2, points=True, 
-                        log_y=False, error_bars=False, show=False, close=True):
+                        log_y=False, error_bars=False, show=False, close=True, title=None, show_axes='both'):
     
-    x = np.array([0, 1])
+    x = np.array([0, bar_width*2])
     
     mean1 = np.nanmean(data1)
     mean2 = np.nanmean(data2)
@@ -225,8 +315,12 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
     std1 = np.nanstd(data1) if error_bars else None
     std2 = np.nanstd(data2) if error_bars else None
 
-    ax.bar(x[0], mean1, yerr=std1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1)
-    ax.bar(x[1], mean2, yerr=std2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1)
+    if error_bars:
+        ax.bar(x[0], mean1, yerr=std1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1, capsize=5)
+        ax.bar(x[1], mean2, yerr=std2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1, capsize=5)
+    else:
+        ax.bar(x[0], mean1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1)
+        ax.bar(x[1], mean2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1)
 
     # Plot bar outlines with opaque edges
     ax.bar(x[0], mean1, color='none', edgecolor=color1, linewidth=2, alpha=1, width=bar_width, zorder=2)
@@ -245,7 +339,18 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels([bar1_label, bar2_label])
-    ax.legend()
+
+    # Customize axes visibility
+    if show_axes == 'both':
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+    elif show_axes == 'none':
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -262,7 +367,7 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, title, bar1_lab
 
     return fig
 
-def plot_binned_bar_chart(fig, ax, data_x, data_y, bin_edges, xlabel, ylabel, title, color, y_limit=None, show=False, close=True):
+def plot_binned_bar_chart(fig, ax, data_x, data_y, bin_edges, xlabel, ylabel, color, y_limit=None, show=False, close=True, title=None):
 
     # Create a DataFrame with data_x and data_y
     df = pd.DataFrame({'x': data_x, 'y': data_y})
@@ -293,7 +398,7 @@ def plot_binned_bar_chart(fig, ax, data_x, data_y, bin_edges, xlabel, ylabel, ti
 
     return fig
 
-def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, ylabel, title, colors, bar_width=0.35, log_y=False, show=False, close=True):
+def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, ylabel, colors, bar_width=0.35, log_y=False, show=False, close=True, title=None, show_axes='both'):
 
     x = np.arange(len(labels))
     bar_positions = np.arange(len(labels))
@@ -317,24 +422,17 @@ def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, 
     if log_y:
         ax.set_yscale('log')
 
-    if show:
-        plt.show()
-    if close:
-        plt.close()
-
-    return fig, ax
-
-def plot_two_lines(fig, ax, data1, data2, label1, label2, color1, color2, xlabel='X', ylabel='Y', title='Line Plot', ylim=None, show=False, close=True):
-    x = np.arange(len(data1))
-    ax.plot(x, data1, color=color1, label=label1)
-    ax.plot(x, data2, color=color2, label=label2)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.legend()
-    ax.grid(True)
-    if ylim is not None:
-        ax.set_ylim(ylim)
+    # Customize axes visibility
+    if show_axes == 'both':
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+    elif show_axes == 'none':
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
 
     if show:
         plt.show()
@@ -343,27 +441,7 @@ def plot_two_lines(fig, ax, data1, data2, label1, label2, color1, color2, xlabel
 
     return fig, ax
 
-def plot_one_line(fig, ax, data1, label1, color1, xlabel='X', ylabel='Y', title='Line Plot', xlim=None, ylim=None, show=False, close=True):
-    x = np.arange(len(data1))
-    ax.plot(x, data1, color=color1, label=label1)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.legend()
-    ax.grid(True)
-    if xlim is not None:
-        ax.set_xlim(xlim)
-    if ylim is not None:
-        ax.set_ylim(ylim)
-
-    if show:
-        plt.show()
-    if close:
-        plt.close()
-
-    return fig, ax
-
-def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color='black', mean_marker='o', x_limits=None, y_limits=None, show=False, close=True):
+def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color='black', mean_marker='o', x_limits=None, y_limits=None, show=False, close=True, show_axes='none'):
     """
     Plots a scatter plot with given coordinates, mean, and standard deviation lines.
     
@@ -408,6 +486,18 @@ def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color
         ax.set_xlim(x_limits)
     if y_limits:
         ax.set_ylim(y_limits)
+
+    # Customize axes visibility
+    if show_axes == 'both':
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+    elif show_axes == 'none':
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
     
     if show:
         plt.show()

@@ -193,6 +193,7 @@ class AnglePlots:
                     pre_coords = self.head_coords[:event_t0]
                     stim_xcoords = self.head_x[event_t0:stim_end]
                     stim_locs = self.head_coords[event_t0:stim_end]
+                    all_stim_locs = self.head_coords[event_t0:end]
                     all_stim_xcoords = self.head_x[event_t0:end]
                     stim_angles = self.angles[event_t0:end]
 
@@ -202,7 +203,7 @@ class AnglePlots:
 
                     self.escape_time, self.prev_escape_time, self.prev_escape_frame, distance_from_exit, facing_exit_time = stats.find_escape_stats(self.df,
                                                                                                                             all_stim_xcoords,
-                                                                                                                            stim_locs,
+                                                                                                                            all_stim_locs,
                                                                                                                             pre_coords,
                                                                                                                             pre_stim_xcoords, 
                                                                                                                             stim_angles, 

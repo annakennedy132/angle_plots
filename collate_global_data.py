@@ -6,14 +6,12 @@ from processing import collation
 from utils import files, parse
 
 def run():
-
     FOLDER, INDEX_FILE = parse_args()
 
     data_folders = files.get_data_folders(FOLDER)
     global_angles_data = {}
     global_locs_data = {}
-    global_dist_data = {}    
-    baseline_data = {}
+    global_dist_data = {}
 
     if INDEX_FILE is not None:
 
@@ -29,7 +27,7 @@ def run():
 
         try:
 
-            global_angles, global_locs, global_dist, baseline_locs_dict = collation.read_global_data(path, folder_name, INDEX_FILE)
+            global_angles, global_locs, global_dist = collation.read_global_data(path, folder_name, INDEX_FILE)
 
             global_angles_data.update(global_angles)
             global_locs_data.update(global_locs)
