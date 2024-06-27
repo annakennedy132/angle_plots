@@ -1,6 +1,7 @@
 import math
-from utils import video
+from utils import video, parse
 import numpy as np
+from scipy.interpolate import interp1d
 
 def get_exit_coords(video_file, thumbnail_scale):
     frame = video.get_frame(video_file)
@@ -77,3 +78,25 @@ def get_rotated_coords(exit_coord, coords):
 
     return rotated_coords
 
+def normalize_length(coord_sets):
+    max_length = max([len(coord_set) for coord_set in coord_sets])
+        
+    normalized_sets = []
+    for coord_set in coord_sets:
+            # Interpolate or resample the coordinates to match avg_length
+        x_interp = interp1d(np.linspace(0, 1, len(coord_set)), [coord[0] for coord in coord_set])
+        y_interp = interp1d(np.linspace(0, 1, len(coord_set)), [coord[1] for coord in coord_set])
+        normalized_x = x_interp(np.linspace(0, 1, int(max_length)))
+        normalized_y = y_interp(np.linspace(0, 1, int(max_length)))
+        normalized_sets.append(list(zip(normalized_x, normalized_y)))
+        
+    return normalized_sets
+
+def calculate_mean_coords(coords):
+    coord_parsed = [parse.parse_coord(coord) for coord in coords]
+    coords = [coord for coord in coord_parsed if coord is not any(np.isnan(coord))]
+    x_coords = [coord[0] for coord in coords]
+    y_coords = [coord[1] for coord in coords]
+    mean_x = np.nanmean(x_coords)
+    mean_y = np.nanmean(y_coords)
+    return mean_x, mean_y

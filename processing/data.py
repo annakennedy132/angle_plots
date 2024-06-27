@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from utils import files, parse
-from scipy.interpolate import interp1d
 
 def bodypart_coords(tracking_db):
     return list(zip(tracking_db['x'], tracking_db['y'], tracking_db['likelihood']))
@@ -35,6 +34,50 @@ def extract_data(df):
     stim = df["stim"].tolist()
 
     return head_x, head_coords, nose_coords, frames, stim
+
+def extract_data_rows(file, data_row=None, escape=False):
+    wt_data = []
+    rd1_data = []
+    wt_false_data = []
+    rd1_false_data = []
+    wt_true_data = []
+    rd1_true_data = []
+
+    df = pd.read_csv(file, header=None, low_memory=False)
+
+    for col in df.columns:
+        mouse_type = df.iloc[1, col]
+        escape_success_col = df.iloc[3, col]
+        column_data = df.iloc[data_row, col]
+
+        if isinstance(column_data, str):
+            try:
+                column_data = float(column_data)
+            except ValueError:
+                pass
+
+        if escape:
+            if escape_success_col in ['True', 'TRUE']:
+                if mouse_type =="wt":
+                    wt_true_data.append(column_data)
+                elif mouse_type =="rd1":
+                    rd1_true_data.append(column_data)
+            if escape_success_col in ["FALSE", "False"]:
+                if mouse_type =="wt":
+                    wt_false_data.append(column_data)
+                elif mouse_type =="rd1":
+                    rd1_false_data.append(column_data)
+
+        else:
+            if mouse_type == 'wt':
+                wt_data.append(column_data)
+            elif mouse_type == "rd1":
+                rd1_data.append(column_data)
+
+    if escape:
+        return wt_true_data, wt_false_data, rd1_true_data, rd1_false_data
+    else:
+        return wt_data, rd1_data
 
 def extract_data_columns(file, data_start, data_end=None, escape=False):
     wt_data = []
@@ -73,73 +116,7 @@ def extract_data_columns(file, data_start, data_end=None, escape=False):
         return wt_true, wt_false, rd1_true, rd1_false
     else:
         return wt_data, rd1_data
-        
-def extract_data_rows(file, row, bool_row):
 
-    wt_data = []
-    rd1_data = []
-    df = pd.read_csv(file, header=None, low_memory=False)
-
-    for col in df.columns:
-        mouse_type = df.iloc[1, col]
-        column_data = df.iloc[row, col]
-
-        # Convert strings to floats for numeric rows
-        if row != bool_row:
-            if isinstance(column_data, str):
-                try:
-                    column_data = float(column_data)
-                except ValueError:
-                    pass
-
-            else:
-                if np.isnan(column_data):
-                    pass
-                elif column_data.strip().lower() == 'true':
-                    column_data = True
-                elif column_data.strip().lower() == 'false':
-                        column_data = False
-                
-
-        if mouse_type == "wt":
-                wt_data.append(column_data)
-        else:
-                rd1_data.append(column_data)
-        
-    return wt_data, rd1_data
-    
-def extract_data_rows_esc(file, row):
-        wt_false_data = []
-        rd1_false_data = []
-        wt_true_data = []
-        rd1_true_data = []
-
-        df = pd.read_csv(file, header=None, low_memory=False)
-
-        for col in df.columns:
-            mouse_type = df.iloc[1, col]
-            esc_success = df.iloc[3, col]
-            column_data = df.iloc[row, col]
-
-            if isinstance(column_data, str):
-                    try:
-                        column_data = float(column_data)
-                    except ValueError:
-                        pass
-
-            if mouse_type == "wt":
-                if esc_success == "True" or esc_success == "TRUE":
-                    wt_true_data.append(column_data)
-                elif esc_success == "False" or esc_success == "FALSE":
-                    wt_false_data.append(column_data)
-            elif mouse_type == "rd1":
-                if esc_success == "True" or esc_success == "TRUE":
-                    rd1_true_data.append(column_data)
-                elif esc_success == "False" or esc_success == "FALSE":
-                    rd1_false_data.append(column_data)
-        
-        return wt_true_data, wt_false_data, rd1_true_data, rd1_false_data
-    
 def extract_escape_data(file):
     df = pd.read_csv(file, header=None, low_memory=False)
     min_escape_frames = 5
@@ -212,7 +189,7 @@ def extract_escape_locs(file, escape=False):
 
     return wt_data, rd1_data
 
-def extract_tort_data(file):
+def extract_tort_data(file, start_row=154, end_row=None):
     df = pd.read_csv(file, header=None, low_memory=False)
 
     wt_true_data = [[] for _ in range(len(df.columns))]
@@ -220,19 +197,25 @@ def extract_tort_data(file):
     rd1_true_data = [[] for _ in range(len(df.columns))]
     rd1_false_data = [[] for _ in range(len(df.columns))]
 
+    # Create the slice for data_range from start_row to end_row
+    if end_row is None:
+        data_range = slice(start_row, None)
+    else:
+        data_range = slice(start_row, end_row)
+
     for col in range(len(df.columns)):
         mouse_type = df.iloc[1, col]
-        column_data = df.iloc[5:, col]
+        column_data = df.iloc[data_range, col]
         escape_success_col = df.iloc[3, col]
 
         column_data = [float(x) for x in column_data if pd.notna(x) and x != 'nan']
 
-        if escape_success_col == 'True' or  escape_success_col == "TRUE":  # Only include columns with "True" in escape_success_col
+        if escape_success_col in ['True', 'TRUE']:
             if mouse_type == 'wt':
                 wt_true_data[col] = column_data
             elif mouse_type.startswith('rd1'):
                 rd1_true_data[col] = column_data
-        if escape_success_col == 'False' or escape_success_col == "FALSE":  # Only include columns with "True" in escape_success_col
+        elif escape_success_col in ['False', 'FALSE']:
             if mouse_type == 'wt':
                 wt_false_data[col] = column_data
             elif mouse_type.startswith('rd1'):
@@ -298,27 +281,4 @@ def extract_avg_data(file, escape=False):
         return wt_true_data, wt_false_data, rd1_true_data, rd1_false_data
     else:
         return wt_data, rd1_data
-
-def normalize_length(coord_sets):
-    max_length = max([len(coord_set) for coord_set in coord_sets])
-        
-    normalized_sets = []
-    for coord_set in coord_sets:
-            # Interpolate or resample the coordinates to match avg_length
-        x_interp = interp1d(np.linspace(0, 1, len(coord_set)), [coord[0] for coord in coord_set])
-        y_interp = interp1d(np.linspace(0, 1, len(coord_set)), [coord[1] for coord in coord_set])
-        normalized_x = x_interp(np.linspace(0, 1, int(max_length)))
-        normalized_y = y_interp(np.linspace(0, 1, int(max_length)))
-        normalized_sets.append(list(zip(normalized_x, normalized_y)))
-        
-    return normalized_sets
-
-def calculate_mean_coords(coords):
-    coord_parsed = [parse.parse_coord(coord) for coord in coords]
-    coords = [coord for coord in coord_parsed if coord is not any(np.isnan(coord))]
-    x_coords = [coord[0] for coord in coords]
-    y_coords = [coord[1] for coord in coords]
-    mean_x = np.nanmean(x_coords)
-    mean_y = np.nanmean(y_coords)
-    return mean_x, mean_y
 

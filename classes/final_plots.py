@@ -180,13 +180,13 @@ class FinalPlots:
             self.figs.append(fig)
 
     def plot_stats_data(self):
-        wt_time, rd1_time = data.extract_data_rows(self.escape_stats_file, row=6, bool_row=3)
-        wt_dist, rd1_dist = data.extract_data_rows(self.escape_stats_file, row=8, bool_row=3)
-        wt_esc_avg, rd1_esc_avg = data.extract_data_rows(self.escape_success_file, row=3, bool_row=None)
-        wt_true_data, wt_false_data, rd1_true_data, rd1_false_data = data.extract_data_rows_esc(self.escape_stats_file, row=7)
-        wt_true_locs, wt_false_locs, rd1_true_locs, rd1_false_locs = data.extract_data_rows_esc(self.escape_stats_file, row=4)
-        wt_age, rd1_age = data.extract_data_rows(self.escape_success_file, row=2, bool_row=None)
-        wt_time_angle, rd1_time_angle = data.extract_data_rows(self.escape_stats_file, row=9, bool_row=3)
+        wt_time, rd1_time = data.extract_data_rows(self.escape_stats_file, data_row=6)
+        wt_dist, rd1_dist = data.extract_data_rows(self.escape_stats_file, data_row=8)
+        wt_esc_avg, rd1_esc_avg = data.extract_data_rows(self.escape_success_file, data_row=3)
+        wt_true_data, wt_false_data, rd1_true_data, rd1_false_data = data.extract_data_rows(self.escape_stats_file, data_row=7, escape=True)
+        wt_true_locs, wt_false_locs, rd1_true_locs, rd1_false_locs = data.extract_data_rows(self.escape_stats_file, data_row=4, escape=True)
+        wt_age, rd1_age = data.extract_data_rows(self.escape_success_file, data_row=2)
+        wt_time_angle, rd1_time_angle = data.extract_data_rows(self.escape_stats_file, data_row=9)
 
         wt_time = np.array(wt_time)
         rd1_time = np.array(rd1_time)
@@ -298,21 +298,51 @@ class FinalPlots:
 
             for distance_list in distance_set:
 
-                total_distance_difference = sum(abs(distance_list[i] - distance_list[i-1]) for i in range(1, len(distance_list)))
-                distance_diff_list.append(total_distance_difference)
+                total_distance_covered = sum(abs(distance_list[i] - distance_list[i-1]) for i in range(1, len(distance_list)))
+                distance_diff_list.append(total_distance_covered)
 
                 # Calculate path length (absolute difference between start and end points)
                 path_length = abs(distance_list[-1] - distance_list[0])
                 path_length_list.append(path_length)
 
                 #calculate distance tortuosity
-                dist_ratio = total_distance_difference / path_length
+                dist_ratio = total_distance_covered / path_length
                 distance_ratio_list.append(dist_ratio)
 
                 if distance_set == wt_distances:
                     wt_dist_ratio = distance_ratio_list
                 elif distance_set == rd1_distances:
                     rd1_dist_ratio = distance_ratio_list
+
+        wt_true_distances, wt_false_distances, rd1_true_distances, rd1_false_distances = data.extract_tort_data(self.event_distances_file, start_row=154)
+        wt_true_dist = []
+        rd1_true_dist = []
+        wt_false_dist = []
+        rd1_false_dist = []
+        distance_sets = [wt_true_distances, wt_false_distances, rd1_true_distances, rd1_false_distances]
+
+        for distance_set in distance_sets:
+
+            distance_diff_list = []
+            path_length_list = []
+
+            for distance_list in distance_set:
+
+                total_distance_covered = sum(abs(distance_list[i] - distance_list[i-1]) for i in range(1, len(distance_list)))
+                distance_diff_list.append(total_distance_covered)
+
+                # Calculate path length (absolute difference between start and end points)
+                path_length = abs(distance_list[-1] - distance_list[0])
+                path_length_list.append(path_length)
+
+                if distance_set == wt_true_distances:
+                    wt_true_dist = distance_diff_list
+                elif distance_set == rd1_true_distances:
+                    rd1_true_dist = distance_diff_list
+                elif distance_set == wt_false_distances:
+                    wt_false_dist = distance_diff_list
+                elif distance_set == rd1_false_distances:
+                    rd1_false_dist = distance_diff_list
                 
         fig4, ax = plt.subplots(figsize=(4,5))
         self.figs.append(fig4)
@@ -333,9 +363,26 @@ class FinalPlots:
                                     title=None,
                                     show=False,
                                     close=True)
+        
+        fig, ax = plt.subplots(figsize=(8,5))
+        self.figs.append(fig)
+        plots.plot_grouped_bar_chart(fig, ax, 
+                                        wt_true_dist, 
+                                        wt_false_dist, 
+                                        rd1_true_dist, 
+                                        rd1_false_dist, 
+                                        ["WT - escape", "WT - no escape", "rd1 - escape", "rd1 - no escape"],
+                                        "Mouse Type", 
+                                        "Distance Covered After Stimulus",
+                                        colors=['tab:blue', 'mediumblue', 'green', 'mediumseagreen'], 
+                                        bar_width=0.35,
+                                        log_y=False, 
+                                        show=False, 
+                                        close=True)
+
 
     def plot_prev_tort(self):
-        wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc = data.extract_tort_data(self.prev_esc_locs_file)
+        wt_true_prev_esc, wt_false_prev_esc, rd1_true_prev_esc, rd1_false_prev_esc = data.extract_tort_data(self.prev_esc_locs_file, start_row=5)
         
         wt_true_tort = []
         wt_false_tort = []
@@ -383,10 +430,10 @@ class FinalPlots:
         wt_true_locs, rd1_true_locs = data.extract_escape_locs(self.event_locs_file, escape=True)
         wt_false_locs, rd1_false_locs = data.extract_escape_locs(self.event_locs_file, escape=False)
 
-        norm_true_wt_locs = data.normalize_length(wt_true_locs)
-        norm_true_rd1_locs = data.normalize_length(rd1_true_locs)
-        norm_false_wt_locs = data.normalize_length(wt_false_locs)
-        norm_false_rd1_locs = data.normalize_length(rd1_false_locs)
+        norm_true_wt_locs = angles.normalize_length(wt_true_locs)
+        norm_true_rd1_locs = angles.normalize_length(rd1_true_locs)
+        norm_false_wt_locs = angles.normalize_length(wt_false_locs)
+        norm_false_rd1_locs = angles.normalize_length(rd1_false_locs)
 
         rotated_true_wt_locs = []
         rotated_true_rd1_locs = []
