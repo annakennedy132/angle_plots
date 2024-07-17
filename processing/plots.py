@@ -80,10 +80,21 @@ def plot_one_line(fig, ax, data1, label1, color1, xlabel='X', ylabel='Y', title=
 
     return fig, ax
 
-def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, close=True):
-    
-    angles_float = [float(angle) for angle in angles if angle is not None]
-    angles_radians = np.deg2rad(angles_float)
+def plot_polar_chart(fig, ax, angles, bins, direction=-1, zero="E", show=False, close=True):
+    # Filter and convert angles to float, ignoring non-numeric values
+    valid_angles = []
+    for angle in angles:
+        try:
+            if angle is not None and np.isfinite(float(angle)):
+                valid_angles.append(float(angle))
+        except (ValueError, TypeError):
+            continue
+
+    if not valid_angles:
+        print("Error: No valid angle values provided for plotting polar chart.")
+        return fig, ax
+
+    angles_radians = np.deg2rad(valid_angles)
         
     hist, bins = np.histogram(angles_radians, bins=bins)
     if np.max(hist) != 0:
@@ -106,75 +117,16 @@ def plot_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, c
     ax.set_theta_zero_location(zero)
     fig.tight_layout()
 
-    if show: plt.show()
-    if close: plt.close()
+    if show:
+        plt.show()
+    if close:
+        plt.close()
 
     return fig, ax
 
-def plot_coords(fig, ax, coords, xlabel, ylabel, gridsize, vmin, vmax, xmin, xmax, ymin, ymax,colorbar=False, show_coord=None, show=False, close=True):
-    x_values = [coord[0] for coord in coords]
-    y_values = [coord[1] for coord in coords]
-
-    extent = [xmin, xmax, ymin, ymax]
-    
-    hb = ax.hexbin(x_values, y_values, gridsize=gridsize, cmap='inferno', vmin=vmin, vmax=vmax, extent=extent, mincnt=0)
-    fig.colorbar(hb, ax=ax, label='Frequency')
-    ax.set_ylim(ymin+25, ymax-25)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title('Heatmap of Coordinates')
-    ax.set_aspect('equal', adjustable='box')
-    
-    if show_coord:
-        ax.scatter(show_coord[0], show_coord[1], color='red', marker="x")
-
-    if colorbar:
-        cb = fig.colorbar(hb, ax=ax)
-        cb.set_label('Frequency')
-
-    if show: plt.show()
-    if close: plt.close()
-
-    return fig
-
-def plot_str_polar_chart(fig, ax, angles, bins, direction=1, zero="E", show=False, close=True):
-    angles = [float(angle) for angle in angles if isinstance(angle, str) and angle.strip() != '' and angle.strip().lower() != 'nan']
-    angles_float = [float(angle) for angle in angles if angle is not None]
-    angles_radians = np.deg2rad(angles_float)
-        
-    hist, bins = np.histogram(angles_radians, bins=bins)
-    if np.max(hist) != 0:
-        hist_norm = hist / np.max(hist)
-    else:
-        print("Error: No angle values provided for plotting polar chart.")
-        return fig, ax
-
-    bars = ax.bar(bins[:-1], hist_norm, width=((2*np.pi)/len(bins)),
-                    edgecolor="navy", alpha=0.5)
-
-    for bar, height in zip(bars, hist_norm):
-        bar.set_facecolor(plt.cm.viridis(height))
-
-    ax.set_xticks(np.linspace(0, 2 * np.pi, 8, endpoint=False))  # 8 ticks evenly spaced, excluding the endpoint
-    labels = ['0°', '45°', '90°', '135°', '180°', '-135°', '-90°', '-45°']
-    ax.set_xticklabels(labels)
-        
-    ax.set_theta_direction(direction)
-    ax.set_theta_zero_location(zero)
-    fig.tight_layout()
-
-    if show: plt.show()
-    if close: plt.close()
-
-    return fig, ax
-
-def plot_str_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, show_coord=None, show=True, close=False, show_axes='none', colorbar=True):
+def plot_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, show_coord=None, show=True, close=False, show_axes='none', colorbar=True):
     
     fig.set_constrained_layout(True)
-
-    # Parse string coordinates to tuples of floats
-    coords = [parse.parse_coord(coord) for coord in coords]
-    coords = [coord for coord in coords if coord is not np.nan]
 
     # Extract x and y values
     x_values = [coord[0] for coord in coords]
@@ -370,37 +322,6 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, bar1_label, bar
         ax.set_yscale('log')
 
     fig.tight_layout()
-
-    if show:
-        plt.show()
-    if close:
-        plt.close()
-
-    return fig
-
-def plot_binned_bar_chart(fig, ax, data_x, data_y, bin_edges, xlabel, ylabel, color, y_limit=None, show=False, close=True, title=None):
-
-    # Create a DataFrame with data_x and data_y
-    df = pd.DataFrame({'x': data_x, 'y': data_y})
-
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  # Calculate bin centers
-
-    # Group y_values into bins and calculate average
-    grouped_data = []
-    for i in range(len(bin_edges) - 1):
-        mask = (df['x'] >= bin_edges[i]) & (df['x'] < bin_edges[i+1])
-        grouped_data.append(df.loc[mask, 'y'].mean())
-
-    ax.bar(bin_centers, grouped_data, width=np.diff(bin_edges), color=color, alpha=0.6, edgecolor=color, linewidth=2, zorder=1)
-    ax.bar(bin_centers, grouped_data, width=np.diff(bin_edges), color='none', edgecolor=color, alpha=0.8, linewidth=2, zorder=2) 
-
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.legend()
-
-    if y_limit is not None:
-        ax.set_ylim(y_limit)
 
     if show:
         plt.show()

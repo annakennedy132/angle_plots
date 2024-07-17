@@ -64,40 +64,40 @@ def run():
             print(f"No events for {folder_name}")
         
         collated_meta_path = os.path.join(output_folder, "collated_escape-stats.csv")
-        collation.write_collated_event_data(collated_meta_path, meta_data)
+        collation.write_collated_data(collated_meta_path, meta_data)
 
         collated_angles_path = os.path.join(output_folder, "collated_event_angles.csv")
-        collation.write_collated_event_data(collated_angles_path, angles_data)
+        collation.write_collated_data(collated_angles_path, angles_data)
 
         collated_locs_path = os.path.join(output_folder, "collated_event_locs.csv")
-        collation.write_collated_event_data(collated_locs_path, locs_data)
+        collation.write_collated_data(collated_locs_path, locs_data)
 
         collated_speeds_path = os.path.join(output_folder, "collated_event_speeds.csv")
-        collation.write_collated_event_data(collated_speeds_path, speeds_data)
+        collation.write_collated_data(collated_speeds_path, speeds_data)
 
         collated_dist_path = os.path.join(output_folder, "collated_event_distances.csv")
-        collation.write_collated_event_data(collated_dist_path, dist_data)
+        collation.write_collated_data(collated_dist_path, dist_data)
         
         collated_during_path = os.path.join(output_folder, "collated_during_angles.csv")
-        collation.write_collated_event_data(collated_during_path, during_angles_data)
+        collation.write_collated_data(collated_during_path, during_angles_data)
 
         collated_after_path = os.path.join(output_folder, "collated_after_angles.csv")
-        collation.write_collated_event_data(collated_after_path, after_angles_data)
+        collation.write_collated_data(collated_after_path, after_angles_data)
 
         collated_after_path = os.path.join(output_folder, "collated_prev_esc_locs.csv")
-        collation.write_collated_event_data(collated_after_path, prev_esc_locs_data)
+        collation.write_collated_data(collated_after_path, prev_esc_locs_data)
 
         collated_escape_path = os.path.join(output_folder, "collated_escape_success.csv")
-        collation.write_collated_event_data(collated_escape_path, escape_stats_data)
+        collation.write_collated_data(collated_escape_path, escape_stats_data)
 
         collated_avg_angles_path = os.path.join(output_folder, "collated_avg_angles.csv")
-        collation.write_collated_event_data(collated_avg_angles_path, average_angles_data)
+        collation.write_collated_data(collated_avg_angles_path, average_angles_data)
 
         collated_avg_dist_path = os.path.join(output_folder, "collated_avg_distances.csv")
-        collation.write_collated_event_data(collated_avg_dist_path, average_dist_data)
+        collation.write_collated_data(collated_avg_dist_path, average_dist_data)
 
         collated_avg_speeds_path = os.path.join(output_folder, "collated_avg_speeds.csv")
-        collation.write_collated_event_data(collated_avg_speeds_path, average_speeds_data)
+        collation.write_collated_data(collated_avg_speeds_path, average_speeds_data)
 
 def parse_args():
 

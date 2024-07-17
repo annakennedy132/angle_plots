@@ -31,7 +31,7 @@ def find_escape_stats(df, all_stim_coords, stim_locs, pre_coords, pre_xcoords, p
                         prev_escape_index = i
                         break
                 else:
-                    prev_escape_index = i
+                    prev_escape_index = None
 
     if prev_escape_index is not None:
         prev_escape_time = round(float(start_frame - prev_escape_index) / fps, 2)

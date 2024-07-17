@@ -211,7 +211,7 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
 
     return (meta_dict, angles_dict, locs_dict, distances_dict, speeds_dict, angles_during_dict, angles_after_dict, prev_esc_locs_dict, escape_success_dict, average_angles, average_distances, average_speeds)
         
-def write_collated_global_data(path, data):
+def write_collated_data(path, data):
 
     with open(path, "w", newline="") as csvfile:
 
@@ -228,15 +228,3 @@ def write_collated_global_data(path, data):
         for i in range(max_length):
             row = [data[key][i] if i < len(data[key]) else "" for key in data.keys()]
             writer.writerow(row)
-
-def write_collated_event_data(path, data):
-
-    with open(path, "w", newline="") as csvfile:
-
-        writer = csv.writer(csvfile)
-
-        #write the header row (event name)
-        writer.writerow(data.keys())
-
-        #write the data rows, transposed so it is in columns
-        writer.writerows(zip(*data.values()))

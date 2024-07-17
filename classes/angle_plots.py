@@ -67,7 +67,7 @@ class AnglePlots:
 
         #create df from tracking and stim data, and extract some of the data
         self.df = data.create_df(self.tracking_file, self.stim_file, self.pcutoff)
-        self.head_x, self.head_coords, self.nose_coords, self.frames, self.stim = data.extract_data(self.df)
+        self.head_x, self.head_coords, self.nose_coords, self.frames, self.stim = data.extract_h5_data(self.df)
 
         #add angles and distance to exit to df using extracted coords
         conversion_factor = 46.5 / 645
@@ -153,7 +153,7 @@ class AnglePlots:
         coord_fig, ax = plt.subplots()
         self.figs.append(coord_fig)
         plt.title("Heatmap of All Coords")
-        plots.plot_coords(coord_fig, ax, self.head_coords, "x", "y", gridsize=50, vmin=0, vmax=50, xmin=100, xmax=800, ymin=650, ymax=100, show=show)
+        plots.plot_coords(coord_fig, ax, self.head_coords, "x", "y", gridsize=50, vmin=0, vmax=50, xmin=100, xmax=800, ymin=650, ymax=100, show_axes='both', show=show)
 
         if close:
             plt.close('all')
@@ -247,7 +247,11 @@ class AnglePlots:
                     before_stim_angles = self.angles_polar[start:event_t0]
                     during_stim_angles = self.angles_polar[event_t0:escape_frame]
                     after_stim_angles = self.angles_polar[return_frame:end]
-                    prev_esc_locs = self.distances_exit[self.prev_escape_frame:event_t0]
+                    if self.prev_escape_frame is not None:
+                        prev_esc_locs = self.distances_exit[self.prev_escape_frame:event_t0]
+                    else:
+                        prev_esc_locs = []
+
 
                     polar_titles = ['Before Stimulus', 'During Time to Escape / Stimulus', 'After Escape / Stimulus']
                     angle_lists = [before_stim_angles, during_stim_angles, after_stim_angles]
@@ -275,7 +279,8 @@ class AnglePlots:
                                       xmax=800, 
                                       ymin=650, 
                                       ymax=100, 
-                                      show_coord=event_locs[self.t_minus*self.fps], 
+                                      show_coord=event_locs[self.t_minus*self.fps],
+                                      show_axes='both', 
                                       show=show)
   
                     event_angle_df = pd.DataFrame((event_angles_polar, event_locs, event_distances, during_stim_angles, after_stim_angles, prev_esc_locs, event_angles_line))
