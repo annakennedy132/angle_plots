@@ -424,3 +424,31 @@ def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color
         plt.close()
 
     return fig, ax
+
+def plot_scatter_trendline(fig, ax, data1_x, data1_y, x_label, y_label, title=None, color='blue', marker_size=20, show=False, close=True, show_axes='both'):
+    sns.regplot(x=data1_x, y=data1_y, ax=ax, scatter=True,
+                scatter_kws={'color': color, 'alpha': 0.7, 's': marker_size}, 
+                line_kws={'color': color}, ci=None)
+    
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+
+    # Customize axes visibility
+    if show_axes == 'both':
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+    elif show_axes == 'none':
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+
+    if show: 
+        plt.show()
+    if close: 
+        plt.close()
+
+    return fig
