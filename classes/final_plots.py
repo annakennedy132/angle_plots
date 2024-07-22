@@ -420,12 +420,12 @@ class FinalPlots:
             for distance_list in distance_set:
 
                 distance_list = [distance for distance in distance_list if not np.isnan(distance)]
-                if distance_list and distance_list[0] >= 5:
-                    continue
-                total_distance_difference = sum(abs(distance_list[i] - distance_list[i-1]) for i in range(1, len(distance_list)))
-                path_length = abs(distance_list[-1] - distance_list[0])
-                dist_ratio = total_distance_difference / path_length
-                tort_list.append(dist_ratio)
+                if distance_list and distance_list[0] < 5:
+                    total_distance_difference = sum(abs(distance_list[i] - distance_list[i-1]) for i in range(1, len(distance_list)))
+                    path_length = abs(distance_list[-1] - distance_list[0])
+                    if path_length != 0:  # To avoid division by zero
+                        dist_ratio = total_distance_difference / path_length
+                        tort_list.append(dist_ratio)
             
             if distance_set == wt_true_prev_esc:
                 wt_true_tort = tort_list
