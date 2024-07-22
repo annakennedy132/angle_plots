@@ -163,22 +163,37 @@ def plot_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=N
 
     return fig
 
-def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700,50), show=False, close=True, show_axes='none', colorbar=True):
+def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700, 50), show=False, close=True, show_axes='none', colorbar=True):
     fig.set_constrained_layout(True)
 
     total_time = len(coordinates[0]) / fps
-    
     colors = np.linspace(0, total_time, len(coordinates[0]))
-    
+
     for coords in coordinates:
-        ax.scatter([coord[0] for coord in coords], [coord[1] for coord in coords], c=colors, cmap='viridis', s=0.25, vmin=0, vmax=total_time)
+        # Extract x and y coordinates
+        x_coords = [coord[0] for coord in coords]
+        y_coords = [coord[1] for coord in coords]
+
+        # Filter out NaN values
+        valid_indices = [i for i, (x, y) in enumerate(zip(x_coords, y_coords)) if not (np.isnan(x) or np.isnan(y))]
+
+        if not valid_indices:
+            print("Warning: All coordinates are NaN for this plot.")
+            continue
+        
+        # Use the valid indices to filter x and y coordinates
+        filtered_x_coords = [x_coords[i] for i in valid_indices]
+        filtered_y_coords = [y_coords[i] for i in valid_indices]
+        filtered_colors = [colors[i] for i in valid_indices]
+
+        ax.scatter(filtered_x_coords, filtered_y_coords, c=filtered_colors, cmap='viridis', s=0.25, vmin=0, vmax=total_time)
 
     if colorbar:
         colorbar = plt.colorbar(ax.collections[0], ax=ax)
         colorbar.set_label('Time (s)')
 
     ax.set_xlabel("x coordinates")
-    ax.set_ylabel("y coordinates") 
+    ax.set_ylabel("y coordinates")
 
     if xlim is not None:
         ax.set_xlim(xlim)
@@ -196,39 +211,11 @@ def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700,50), show=False
         ax.spines['bottom'].set_visible(False)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
-    
+
     if show:
         plt.show()
     
     if close:
-        plt.close()
-
-    return fig
-
-def plot_scatter_trendline(fig, ax, data1_x, data1_y, x_label, y_label, title=None, color='blue', marker_size=20, show=False, close=True, show_axes='both'):
-    sns.regplot(x=data1_x, y=data1_y, ax=ax, scatter=True,
-                scatter_kws={'color': color, 'alpha': 0.7, 's': marker_size}, 
-                line_kws={'color': color}, ci=None)
-    
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-
-    # Customize axes visibility
-    if show_axes == 'both':
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-    elif show_axes == 'none':
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
-    if show: 
-        plt.show()
-    if close: 
         plt.close()
 
     return fig

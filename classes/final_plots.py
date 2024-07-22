@@ -460,89 +460,14 @@ class FinalPlots:
         norm_false_wt_locs = angles.normalize_length(wt_false_locs)
         norm_false_rd1_locs = angles.normalize_length(rd1_false_locs)
 
-        rotated_true_wt_locs = []
-        rotated_true_rd1_locs = []
-        rotated_false_wt_locs = []
-        rotated_false_rd1_locs = []
-        stretched_true_wt_locs = []
-        stretched_true_rd1_locs = []
-        stretched_false_wt_locs = []
-        stretched_false_rd1_locs = []
-
-        exit_coord = (770, 370)
-        min_wt_true_coord = None
-        min_rd1_true_coord = None
-        min_wt_false_coord = None
-        min_rd1_false_coord = None
-
-        for coord_set in norm_true_wt_locs:
-            coords = angles.get_rotated_coords(exit_coord, coord_set)
-            rotated_true_wt_locs.append(coords)
-            first_coord = coords[0]
-            if min_wt_true_coord is None or first_coord[0] < min_wt_true_coord[0]:
-                min_wt_true_coord = first_coord
-            stretched_coords = stretch_traj(coords, min_wt_true_coord)
-            stretched_true_wt_locs.append(stretched_coords)
-
-        for coord_set in norm_true_rd1_locs:
-            coords = angles.get_rotated_coords(exit_coord, coord_set)
-            rotated_true_rd1_locs.append(coords)
-            first_coord = coords[0]
-            if min_rd1_true_coord is None or first_coord[0] < min_rd1_true_coord[0]:
-                min_rd1_true_coord = first_coord
-            stretched_coords = stretch_traj(coords, min_rd1_true_coord)
-            stretched_true_rd1_locs.append(stretched_coords)
-
-        for coord_set in norm_false_wt_locs:
-            coords = angles.get_rotated_coords(exit_coord, coord_set)
-            rotated_false_wt_locs.append(coords)
-            first_coord = coords[0]
-            if min_wt_false_coord is None or first_coord[0] < min_wt_false_coord[0]:
-                min_wt_false_coord = first_coord
-            stretched_coords = stretch_traj(coords, min_wt_false_coord)
-            stretched_false_wt_locs.append(stretched_coords)
-
-        for coord_set in norm_false_rd1_locs:
-            coords = angles.get_rotated_coords(exit_coord, coord_set)
-            rotated_false_rd1_locs.append(coords)
-            first_coord = coords[0]
-            if min_rd1_false_coord is None or first_coord[0] < min_rd1_false_coord[0]:
-                min_rd1_false_coord = first_coord
-            stretched_coords = stretch_traj(coords, min_rd1_false_coord)
-            stretched_false_rd1_locs.append(stretched_coords)
-
-        fig, ((ax1, ax2), (ax3,ax4)) = plt.subplots(2,2, figsize=(14,10))
-        #self.figs.append(fig)
-        plots.time_plot(fig, ax1, norm_true_wt_locs, fps=30, show=True, close=True, colorbar=False)
-        plots.time_plot(fig, ax2, norm_false_wt_locs, fps=30, show=True, close=True)
-        plots.time_plot(fig, ax3, norm_true_rd1_locs, fps=30, show=True, close=True, colorbar=False)
-        plots.time_plot(fig, ax4, norm_false_rd1_locs, fps=30, show=True, close=True)
-
-        fig, ((ax1, ax2), (ax3,ax4)) = plt.subplots(2,2, figsize=(14,10))
-        #self.figs.append(fig)
-        plots.time_plot(fig, ax1, rotated_true_wt_locs, fps=30, show=False, close=True, colorbar=False)
-        plots.time_plot(fig, ax2, rotated_false_wt_locs, fps=30, show=False, close=True)
-        plots.time_plot(fig, ax3, rotated_true_rd1_locs, fps=30, show=False, close=True, colorbar=False)
-        plots.time_plot(fig, ax4, rotated_false_rd1_locs, fps=30, show=False, close=True)
-
-        fig, ((ax1, ax2), (ax3,ax4)) = plt.subplots(2,2, figsize=(14,10))
-        #self.figs.append(fig)
-        plots.time_plot(fig, ax1, stretched_true_wt_locs, fps=30, show=False, close=True, colorbar=False)
-        plots.time_plot(fig, ax2, stretched_false_wt_locs, fps=30, show=False, close=True)
-        plots.time_plot(fig, ax3, stretched_true_rd1_locs, fps=30, show=False, close=True, colorbar=False)
-        plots.time_plot(fig, ax4, stretched_false_rd1_locs, fps=30, show=False, close=True)
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2, figsize=(14,10))
+        self.figs.append(fig)
+        plots.time_plot(fig, ax1, norm_true_wt_locs, fps=30, show=False, close=True, colorbar=False)
+        plots.time_plot(fig, ax2, norm_false_wt_locs, fps=30, show=False, close=True, colorbar=wt_true_locs)
+        plots.time_plot(fig, ax3, norm_true_rd1_locs, fps=30, show=False, close=True, colorbar=False)
+        plots.time_plot(fig, ax4, norm_false_rd1_locs, fps=30, show=False, close=True, colorbar=True)
 
     def save_pdfs(self):
         if self.save_figs:
             if self.figs:
                 files.save_report(self.figs, self.folder, "data")
-
-def stretch_traj(coords, target_start_coord):
-        
-        target_start_x = target_start_coord[0]
-        stretch_factor = abs(coords[-1][0] - target_start_x) / (coords[-1][0] - coords[0][0])
-        stretched_coords = [(coord[0] * stretch_factor, coord[1]) for coord in coords]
-        translation = stretched_coords[0][0] - target_start_x
-        translated_coords = [((coord[0] - translation), coord[1]) for coord in stretched_coords]
-
-        return translated_coords
