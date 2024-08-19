@@ -37,11 +37,11 @@ def extract_h5_data(df):
 
 def extract_data_rows(file, data_row=None, escape=False):
     wt_data = []
-    rd1_data = []
+    blind_data = []
     wt_false_data = []
-    rd1_false_data = []
+    blind_false_data = []
     wt_true_data = []
-    rd1_true_data = []
+    blind_true_data = []
 
     df = pd.read_csv(file, header=None, low_memory=False)
 
@@ -60,24 +60,24 @@ def extract_data_rows(file, data_row=None, escape=False):
             if escape_success_col in ['True', 'TRUE']:
                 if mouse_type =="wt":
                     wt_true_data.append(column_data)
-                elif mouse_type =="rd1":
-                    rd1_true_data.append(column_data)
+                elif mouse_type != "wt":
+                    blind_true_data.append(column_data)
             if escape_success_col in ["FALSE", "False"]:
                 if mouse_type =="wt":
                     wt_false_data.append(column_data)
-                elif mouse_type =="rd1":
-                    rd1_false_data.append(column_data)
+                elif mouse_type != "wt":
+                    blind_false_data.append(column_data)
 
         else:
             if mouse_type == 'wt':
                 wt_data.append(column_data)
-            elif mouse_type == "rd1":
-                rd1_data.append(column_data)
+            elif mouse_type != "wt":
+                blind_data.append(column_data)
 
     if escape:
-        return wt_true_data, wt_false_data, rd1_true_data, rd1_false_data
+        return wt_true_data, wt_false_data, blind_true_data, blind_false_data
     else:
-        return wt_data, rd1_data
+        return wt_data, blind_data
 
 def find_escape_index(column_data, min_escape_frames=5):
     escape_index = len(column_data)
@@ -92,15 +92,15 @@ def extract_data(file, nested=True, data_start=154, data_end=None, escape=False,
 
     if nested:
         wt_data = [[] for _ in range(len(df.columns))]
-        rd1_data = [[] for _ in range(len(df.columns))]
+        blind_data = [[] for _ in range(len(df.columns))]
         wt_true_data = [[] for _ in range(len(df.columns))]
         wt_false_data = [[] for _ in range(len(df.columns))]
-        rd1_true_data = [[] for _ in range(len(df.columns))]
-        rd1_false_data = [[] for _ in range(len(df.columns))]
+        blind_true_data = [[] for _ in range(len(df.columns))]
+        blind_false_data = [[] for _ in range(len(df.columns))]
     else:
-        wt_data, rd1_data = [], []
+        wt_data, blind_data = [], []
         wt_true_data, wt_false_data = [], []
-        rd1_true_data, rd1_false_data = [], []
+        blind_true_data, blind_false_data = [], []
 
     data_range = slice(data_start, data_end)
 
@@ -135,50 +135,50 @@ def extract_data(file, nested=True, data_start=154, data_end=None, escape=False,
                         wt_true_data[col] = column_data
                     else:
                         wt_true_data.extend(column_data)
-                elif mouse_type.startswith('rd1'):
+                elif mouse_type != "wt":
                     if nested:
-                        rd1_true_data[col] = column_data
+                        blind_true_data[col] = column_data
                     else:
-                        rd1_true_data.extend(column_data)
+                        blind_true_data.extend(column_data)
             elif escape_success_col in ['False', 'FALSE']:
                 if mouse_type == 'wt':
                     if nested:
                         wt_false_data[col] = column_data
                     else:
                         wt_false_data.extend(column_data)
-                elif mouse_type.startswith('rd1'):
+                elif mouse_type != "wt":
                     if nested:
-                        rd1_false_data[col] = column_data
+                        blind_false_data[col] = column_data
                     else:
-                        rd1_false_data.extend(column_data)
+                        blind_false_data.extend(column_data)
         else:
             if mouse_type == 'wt':
                 if nested:
                     wt_data[col] = column_data
                 else:
                     wt_data.extend(column_data)
-            elif mouse_type.startswith('rd1'):
+            elif mouse_type != "wt":
                 if nested:
-                    rd1_data[col] = column_data
+                    blind_data[col] = column_data
                 else:
-                    rd1_data.extend(column_data)
+                    blind_data.extend(column_data)
 
     if nested:
         wt_data = [data for data in wt_data if data]
-        rd1_data = [data for data in rd1_data if data]
+        blind_data = [data for data in blind_data if data]
         wt_true_data = [data for data in wt_true_data if data]
         wt_false_data = [data for data in wt_false_data if data]
-        rd1_true_data = [data for data in rd1_true_data if data]
-        rd1_false_data = [data for data in rd1_false_data if data]
+        blind_true_data = [data for data in blind_true_data if data]
+        blind_false_data = [data for data in blind_false_data if data]
     else:
         wt_data = list(filter(None, wt_data))
-        rd1_data = list(filter(None, rd1_data))
+        blind_data = list(filter(None, blind_data))
         wt_true_data = list(filter(None, wt_true_data))
         wt_false_data = list(filter(None, wt_false_data))
-        rd1_true_data = list(filter(None, rd1_true_data))
-        rd1_false_data = list(filter(None, rd1_false_data))
+        blind_true_data = list(filter(None, blind_true_data))
+        blind_false_data = list(filter(None, blind_false_data))
 
     if escape:
-        return wt_true_data, wt_false_data, rd1_true_data, rd1_false_data
+        return wt_true_data, wt_false_data, blind_true_data, blind_false_data
     else:
-        return wt_data, rd1_data
+        return wt_data, blind_data
