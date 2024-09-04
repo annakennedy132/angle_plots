@@ -5,8 +5,9 @@ from classes.final_plots import FinalPlots
 def run():
 
     FOLDER = parse_args()
+    mouse_type = input("Input blind mouse type: ")
 
-    fp = FinalPlots(FOLDER)
+    fp = FinalPlots(FOLDER, mouse_type)
     fp.plot_global_data()
     fp.plot_event_data()
     fp.plot_tort_data()
