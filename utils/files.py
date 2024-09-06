@@ -46,7 +46,7 @@ def load_video_file(tracking_file):
             video_file = file
     
     if video_file is None:
-        raise NameError("No stim file in folder")
+        raise NameError("No video file in folder")
     
     return video_file
 
