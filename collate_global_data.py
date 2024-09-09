@@ -40,13 +40,13 @@ def run():
             print(f"No data to analyse for {folder_name}")
         
         collated_global_angles_path = os.path.join(output_folder, "collated_global_angles.csv")
-        collation.write_collated_global_data(collated_global_angles_path, global_angles_data)
+        collation.write_collated_data(collated_global_angles_path, global_angles_data)
 
         collated_global_locs_path = os.path.join(output_folder, "collated_global_locs.csv")
-        collation.write_collated_global_data(collated_global_locs_path, global_locs_data)
+        collation.write_collated_data(collated_global_locs_path, global_locs_data)
             
         collated_global_dist_path = os.path.join(output_folder, "collated_global_distances.csv")
-        collation.write_collated_global_data(collated_global_dist_path, global_dist_data)
+        collation.write_collated_data(collated_global_dist_path, global_dist_data)
 
 def parse_args():
 
