@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from utils import files
 from processing import plots, data, angles
@@ -18,7 +17,7 @@ class FinalPlots:
         self.save_figs = save_figs
 
         self.parent_folder = os.path.dirname(self.folder)
-        self.global_file = next((os.path.join(self.parent_folder, file) for file in os.listdir(self.parent_folder) if file.endswith("global_data")), None)
+        self.global_file = next((os.path.join(self.folder, file) for file in os.listdir(self.folder) if file.endswith("global_data")), None)
         
         self.global_angles_file = next((os.path.join(self.global_file, file) for file in os.listdir(self.global_file) if file.endswith("angles.csv")), None)
         self.global_locs_file = next((os.path.join(self.global_file, file) for file in os.listdir(self.global_file) if file.endswith("locs.csv")), None)
@@ -39,12 +38,94 @@ class FinalPlots:
 
         self.mouse_type = mouse_type
     
+    def categorize_behavior(self, total_angle_change, total_distance):
+        # Define thresholds for behavior categorization based on total distance and total angle change
+        stationary_dist_threshold = 10
+        directed_dist_threshold = 5
+        stationary_angle_threshold = 300
+        directed_angle_threshold = 300
+
+        # Categorization logic based on total distance and total angle change thresholds
+        if total_distance < stationary_dist_threshold and total_angle_change < stationary_angle_threshold:
+            return "stationary"
+        elif total_distance > directed_dist_threshold and total_angle_change > directed_angle_threshold:
+            return "directed"
+        else: 
+            return "exploratory"
+
+    def calculate_arena_coverage(self, locations, grid_size=20, arena_bounds=(90, 790, 80, 670)):
+        xmin, xmax, ymin, ymax = arena_bounds
+
+        x_bins = np.arange(xmin, xmax + grid_size, grid_size)
+        y_bins = np.arange(ymin, ymax + grid_size, grid_size)
+
+        total_cells = (len(x_bins) - 1) * (len(y_bins) - 1)  # Total number of grid cells in the arena
+
+        coverage_percentages = []
+
+        for mouse_locs in locations:
+            filtered_locs = [loc for loc in mouse_locs if isinstance(loc, (list, tuple)) and len(loc) == 2 and not (np.isnan(loc[0]) or np.isnan(loc[1]))]
+            x_coords = [loc[0] for loc in filtered_locs]
+            y_coords = [loc[1] for loc in filtered_locs]
+            x_grid = np.digitize(x_coords, x_bins)
+            y_grid = np.digitize(y_coords, y_bins)
+            visited_cells = set(zip(x_grid, y_grid))
+            percentage_covered = (len(visited_cells) / total_cells) * 100
+            coverage_percentages.append(percentage_covered)
+
+        return coverage_percentages
+
+    def analyze_behavior(self, angles, distances):
+        time_frame = self.fps * 2  # 2 seconds chunks (assuming 30 fps, this would be 60 frames)
+        num_chunks = len(angles) // time_frame
+
+        behavior_counts = {"stationary": 0, "exploratory": 0, "directed": 0}
+
+        for i in range(num_chunks):
+            chunk_angles = angles[i * time_frame: (i + 1) * time_frame]
+            chunk_distances = distances[i * time_frame: (i + 1) * time_frame]
+
+            # Calculate total angles covered
+            total_angle_change = sum(abs(chunk_angles[j] - chunk_angles[j - 1]) for j in range(1, len(chunk_angles)))
+
+            # Calculate path length
+            total_distance = abs(chunk_distances[-1] - chunk_distances[0])
+
+            # Categorize behavior based on the new angle and distance calculations
+            behavior = self.categorize_behavior(total_angle_change, total_distance)
+            if behavior in behavior_counts:
+                behavior_counts[behavior] += 1
+
+        total_chunks = num_chunks
+        behavior_percentages = {behavior: count / total_chunks * 100 for behavior, count in behavior_counts.items()}
+        
+        return behavior_percentages
+    
+    def compute_mean_behavior(self, all_angles, all_distances):
+        # Initialize counters for the mean
+        mean_behavior_counts = {"stationary": 0, "exploratory": 0, "directed": 0}
+        num_datasets = len(all_angles)
+
+        # Process each list of angles and distances
+        for angles, distances in zip(all_angles, all_distances):
+            behavior_percentages = self.analyze_behavior(angles, distances)
+
+            # Accumulate behavior percentages
+            for behavior, percentage in behavior_percentages.items():
+                mean_behavior_counts[behavior] += percentage
+
+        # Compute the mean by dividing by the number of datasets
+        mean_behavior_counts = {behavior: count / num_datasets for behavior, count in mean_behavior_counts.items()}
+
+        return mean_behavior_counts
+
     def plot_global_data(self):
 
         wt_baseline_locs, blind_baseline_locs = data.extract_data(self.global_locs_file, nested=False, data_start=3, data_end=5400, process_coords=True, escape_col=None)
+        all_wt_locs, all_blind_locs = data.extract_data(self.global_locs_file, nested=True, data_start=3, process_coords=True, escape_col=None)
         self.wt_baseline_angles, self.blind_baseline_angles = data.extract_data(self.global_angles_file, nested=False, data_start=3, data_end=5400, escape_col=None)
         self.wt_baseline_distances, self.blind_baseline_distances = data.extract_data(self.global_distances_file, nested=False, data_start=3, data_end=5400, escape_col=None)
-        wt_locs, blind_locs = data.extract_data(self.event_locs_file, nested=False, data_start=4, escape=False, process_coords=True, escape_col=None)
+        wt_locs, blind_locs = data.extract_data(self.event_locs_file, nested=False, data_start=154, escape=False, process_coords=True, escape_col=None)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
         self.figs.append(fig)
@@ -56,13 +137,36 @@ class FinalPlots:
         plots.plot_coords(fig, ax1, wt_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=100, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True, colorbar=False)
         plots.plot_coords(fig, ax2, blind_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=100, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True)
 
+        wt_coverage = self.calculate_arena_coverage(all_wt_locs)
+        blind_coverage = self.calculate_arena_coverage(all_blind_locs)
+
+        fig, ax = plt.subplots(figsize=(4,5))
+        self.figs.append(fig)
+        plots.plot_bar_two_groups(fig, ax, 
+            wt_coverage, 
+            blind_coverage,
+            x_label=None,
+            y_label='% Arena Covered', 
+            bar1_label='WT Mice', 
+            bar2_label=f'{self.mouse_type} Mice', 
+            color1='tab:blue', 
+            color2='mediumseagreen', 
+            bar_width=0.2, 
+            points=True, 
+            log_y=False, 
+            error_bars=False,
+            show_axes='both',
+            title=None)
+
     def plot_event_data(self):
         wt_before_angles, blind_before_angles = data.extract_data(self.event_angles_file, nested=False, data_start=4, data_end=154)
         wt_after_angles, blind_after_angles = data.extract_data(self.after_angles_file, nested=False, data_start=4)
         wt_during_angles, blind_during_angles = data.extract_data(self.during_angles_file, nested=False, data_start=4)
         wt_true_after_angles, wt_false_after_angles, blind_true_after_angles, blind_false_after_angles = data.extract_data(self.after_angles_file, nested=False, data_start=4, escape=True, escape_col=3)
         wt_true_during_angles, wt_false_during_angles, blind_true_during_angles, blind_false_during_angles = data.extract_data(self.during_angles_file, nested=False, data_start=4, escape=True, escape_col=3)
-        
+        event_wt_locs, event_blind_locs = data.extract_data(self.event_locs_file, nested=True, data_start=154, data_end=None, escape=False, process_coords=True, get_escape_index=False, escape_col=3)
+        wt_true_locs, wt_false_locs, blind_true_locs, blind_false_locs = data.extract_data(self.event_locs_file, data_start=154, escape=True, process_coords=True, get_escape_index=True, escape_col=3)
+
         # Plot polar plots
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 5), subplot_kw=dict(projection='polar'))
         self.figs.append(fig)
@@ -109,6 +213,48 @@ class FinalPlots:
         plots.plot_polar_chart(fig, ax3, blind_true_after_angles, bins=36, show=False, close=True)
         ax4.set_title(f'{self.mouse_type} - no escape')
         plots.plot_polar_chart(fig, ax4, blind_false_after_angles, bins=36, show=False, close=True)
+
+        wt_coverage = self.calculate_arena_coverage(event_wt_locs)
+        blind_coverage = self.calculate_arena_coverage(event_blind_locs)
+
+        fig, ax = plt.subplots(figsize=(4,5))
+        self.figs.append(fig)
+        plots.plot_bar_two_groups(fig, ax, 
+            wt_coverage, 
+            blind_coverage,
+            x_label=None,
+            y_label='% Arena Covered After Stimulus', 
+            bar1_label='WT Mice', 
+            bar2_label=f'{self.mouse_type} Mice', 
+            color1='tab:blue', 
+            color2='mediumseagreen', 
+            bar_width=0.2, 
+            points=True, 
+            log_y=False, 
+            error_bars=False,
+            show_axes='both',
+            title=None)
+        
+        wt_true_coverage = self.calculate_arena_coverage(wt_true_locs)
+        wt_false_coverage = self.calculate_arena_coverage(wt_false_locs)
+        blind_true_coverage = self.calculate_arena_coverage(blind_true_locs)
+        blind_false_coverage = self.calculate_arena_coverage(blind_false_locs)
+
+        fig, ax = plt.subplots(figsize=(8,5))
+        self.figs.append(fig)
+        plots.plot_grouped_bar_chart(fig, ax, 
+                                    wt_true_coverage,
+                                    wt_false_coverage, 
+                                    blind_true_coverage,
+                                    blind_false_coverage,
+                                    ["WT - escape", "WT - no escape", f"{self.mouse_type} - escape", f"{self.mouse_type} - no escape"],
+                                    "Mouse Type", 
+                                    "% Arena Covered After Stimulus",
+                                    colors=['tab:blue', 'mediumblue', 'green', 'mediumseagreen'], 
+                                    bar_width=0.35,
+                                    log_y=False, 
+                                    show=False, 
+                                    close=True)
 
     def plot_avgs_data(self):
         wt_avg_angles, blind_avg_angles = data.extract_data(self.avg_angles_file, data_start=3, escape=False)
@@ -220,17 +366,18 @@ class FinalPlots:
                                     wt_age, 
                                     wt_esc_avg, 
                                     "Mouse Age", 
-                                    "Average Escape Success Rate (%)",
+                                    "Escape Success Rate (%)",
                                     "WT",
                                     color='tab:blue', 
                                     marker_size=20, 
                                     show=False, 
                                     close=True)
+        
         plots.plot_scatter_trendline(fig, ax2,
                                     blind_age, 
                                     blind_esc_avg, 
                                     "Mouse Age", 
-                                    "Average Escape Success Rate (%)",
+                                    "Escape Success Rate (%)",
                                     f"{self.mouse_type}",
                                     color='mediumseagreen', 
                                     marker_size=20, 
@@ -332,7 +479,7 @@ class FinalPlots:
                                 wt_true_dist_ratio,  
                                 blind_true_dist_ratio, 
                                 "Mouse type", 
-                                "Total Distance Covered / Path Length (log)",
+                                "Tortuosity of Escape Path (log)",
                                 "WT", 
                                 f"{self.mouse_type}",
                                 color1='tab:blue',
@@ -390,22 +537,6 @@ class FinalPlots:
                     wt_false_dist = distance_diff_list
                 elif distance_set == blind_false_distances:
                     blind_false_dist = distance_diff_list
-        
-        fig, ax = plt.subplots(figsize=(8,5))
-        self.figs.append(fig)
-        plots.plot_grouped_bar_chart(fig, ax, 
-                                    wt_true_dist, 
-                                    wt_false_dist, 
-                                    blind_true_dist, 
-                                    blind_false_dist, 
-                                    ["WT - escape", "WT - no escape", f"{self.mouse_type} - escape", f"{self.mouse_type} - no escape"],
-                                    "Mouse Type", 
-                                    "Distance Covered After Stimulus (cm)",
-                                    colors=['tab:blue', 'mediumblue', 'green', 'mediumseagreen'], 
-                                    bar_width=0.35,
-                                    log_y=False, 
-                                    show=False, 
-                                    close=True)
 
     def plot_prev_tort(self):
         wt_true_prev_esc, wt_false_prev_esc, blind_true_prev_esc, blind_false_prev_esc = data.extract_data(self.prev_esc_locs_file, data_start=4, escape=True, escape_col=3)
@@ -472,100 +603,31 @@ class FinalPlots:
         plots.time_plot(fig, ax3, norm_true_blind_locs, fps=30, show=False, close=True, colorbar=False)
         plots.time_plot(fig, ax4, norm_false_blind_locs, fps=30, show=False, close=True, colorbar=True)
 
-    def categorize_behavior(self, total_angle_change, total_distance):
-        
-        # Define thresholds for behavior categorization based on total distance and total angle change
-        stationary_dist_threshold = 10
-        directed_dist_threshold = 5
-        stationary_angle_threshold = 300
-        directed_angle_threshold = 300
-
-        # Categorization logic based on total distance and total angle change thresholds
-        if total_distance < stationary_dist_threshold and total_angle_change < stationary_angle_threshold:
-            return "stationary"
-        elif total_distance > directed_dist_threshold and total_angle_change > directed_angle_threshold:
-            return "directed"
-        else: 
-            return "exploratory"
-
-    def analyze_behavior(self, angles, distances):
-        time_frame = self.fps * 2  # 2 seconds chunks (assuming 30 fps, this would be 60 frames)
-        num_chunks = len(angles) // time_frame
-
-        behavior_counts = {"stationary": 0, "exploratory": 0, "directed": 0}
-
-        for i in range(num_chunks):
-            chunk_angles = angles[i * time_frame: (i + 1) * time_frame]
-            chunk_distances = distances[i * time_frame: (i + 1) * time_frame]
-
-            # Calculate total angles covered
-            total_angle_change = sum(abs(chunk_angles[j] - chunk_angles[j - 1]) for j in range(1, len(chunk_angles)))
-
-            # Calculate path length
-            total_distance = abs(chunk_distances[-1] - chunk_distances[0])
-
-            # Categorize behavior based on the new angle and distance calculations
-            behavior = self.categorize_behavior(total_angle_change, total_distance)
-            if behavior in behavior_counts:
-                behavior_counts[behavior] += 1
-
-        total_chunks = num_chunks
-        behavior_percentages = {behavior: count / total_chunks * 100 for behavior, count in behavior_counts.items()}
-        
-        return behavior_percentages
-    
-    def compute_mean_behavior(self, all_angles, all_distances):
-        # Initialize counters for the mean
-        mean_behavior_counts = {"stationary": 0, "exploratory": 0, "directed": 0}
-        num_datasets = len(all_angles)
-
-        # Process each list of angles and distances
-        for angles, distances in zip(all_angles, all_distances):
-            behavior_percentages = self.analyze_behavior(angles, distances)
-
-            # Accumulate behavior percentages
-            for behavior, percentage in behavior_percentages.items():
-                mean_behavior_counts[behavior] += percentage
-
-        # Compute the mean by dividing by the number of datasets
-        mean_behavior_counts = {behavior: count / num_datasets for behavior, count in mean_behavior_counts.items()}
-
-        return mean_behavior_counts
-
     def plot_behavior(self):
         # Extract data for angles and distances
         wt_event_angles, blind_event_angles = data.extract_data(self.event_angles_file, data_start=154)
         wt_event_distances, blind_event_distances = data.extract_data(self.event_distances_file, data_start=154)
         wt_baseline_angles, blind_baseline_angles = data.extract_data(self.global_angles_file, data_start=4, data_end=5400)
         wt_baseline_distances, blind_baseline_distances = data.extract_data(self.global_distances_file, data_start=4, data_end=5400)
-
-        # Define datasets (for both WT and blind mice) 
         angle_sets = [wt_baseline_angles, wt_event_angles, blind_baseline_angles, blind_event_angles]
         distance_sets = [wt_baseline_distances, wt_event_distances, blind_baseline_distances, blind_event_distances]
 
-        # Initialize dictionaries to store mean behavior percentages for each set
         wt_global_behavior = {}
         wt_event_behavior = {}
         blind_global_behavior = {}
         blind_event_behavior = {}
 
-        # Loop through each dataset, analyzing behavior, and storing results
         for i, (angle_set, distance_set) in enumerate(zip(angle_sets, distance_sets)):
-
             behavior_percentages_list = []
-
             for angles, distances in zip(angle_set, distance_set):
-                # Analyze behavior for each individual dataset (angles/distances pair)
                 behavior_percentages = self.analyze_behavior(angles, distances)
                 behavior_percentages_list.append(behavior_percentages)
 
-            # Compute mean percentages for the current set
             mean_behavior_percentages = {
                 behavior: np.mean([behavior_data[behavior] for behavior_data in behavior_percentages_list])
                 for behavior in behavior_percentages_list[0]
             }
 
-            # Store results in corresponding dictionary
             if i == 0:
                 wt_global_behavior = mean_behavior_percentages
             elif i == 1:
@@ -575,24 +637,19 @@ class FinalPlots:
             elif i == 3:
                 blind_event_behavior = mean_behavior_percentages
 
-        # Create subplots for plotting
         fig, axes = plt.subplots(2, 2, figsize=(10, 10))
         fig.suptitle('Behavioral Analysis')
         self.figs.append(fig)
 
-        # WT Global pie chart
         axes[0, 0].pie(wt_global_behavior.values(), labels=wt_global_behavior.keys(), autopct='%1.1f%%', colors=['lightblue', 'orange', 'green'])
         axes[0, 0].set_title('WT Baseline')
 
-        # WT Event pie chart
         axes[0, 1].pie(wt_event_behavior.values(), labels=wt_event_behavior.keys(), autopct='%1.1f%%', colors=['lightblue', 'orange', 'green'])
         axes[0, 1].set_title('WT Event')
 
-        # Blind Global pie chart
         axes[1, 0].pie(blind_global_behavior.values(), labels=blind_global_behavior.keys(), autopct='%1.1f%%', colors=['lightblue', 'orange', 'green'])
         axes[1, 0].set_title(f'{self.mouse_type} Baseline')
 
-        # Blind Event pie chart
         axes[1, 1].pie(blind_event_behavior.values(), labels=blind_event_behavior.keys(), autopct='%1.1f%%', colors=['lightblue', 'orange', 'green'])
         axes[1, 1].set_title(f'{self.mouse_type} Event')
 

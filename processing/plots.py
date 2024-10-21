@@ -164,7 +164,6 @@ def plot_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=N
     return fig
 
 def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700, 50), show=False, close=True, show_axes='none', colorbar=True):
-    fig.set_constrained_layout(True)
 
     total_time = len(coordinates[0]) / fps
     colors = np.linspace(0, total_time, len(coordinates[0]))
@@ -211,6 +210,8 @@ def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700, 50), show=Fals
         ax.spines['bottom'].set_visible(False)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
+
+    fig.set_constrained_layout(True)
 
     if show:
         plt.show()

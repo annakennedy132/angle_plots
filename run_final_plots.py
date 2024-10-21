@@ -10,9 +10,9 @@ def run():
 
     fp = FinalPlots(FOLDER, mouse_type)
     fp.plot_global_data()
-    fp.plot_tort_data()
     fp.plot_event_data()
     fp.plot_stats_data()
+    fp.plot_tort_data()
     fp.plot_prev_tort()
     #fp.plot_traj_data()
     fp.plot_avgs_data()
