@@ -175,10 +175,6 @@ def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700, 50), show=Fals
 
         # Filter out NaN values
         valid_indices = [i for i, (x, y) in enumerate(zip(x_coords, y_coords)) if not (np.isnan(x) or np.isnan(y))]
-
-        if not valid_indices:
-            print("Warning: All coordinates are NaN for this plot.")
-            continue
         
         # Use the valid indices to filter x and y coordinates
         filtered_x_coords = [x_coords[i] for i in valid_indices]
@@ -210,8 +206,6 @@ def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700, 50), show=Fals
         ax.spines['bottom'].set_visible(False)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
-
-    fig.set_constrained_layout(True)
 
     if show:
         plt.show()
@@ -267,8 +261,8 @@ def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, bar1_label, bar
     std2 = np.nanstd(data2) if error_bars else None
 
     if error_bars:
-        ax.bar(x[0], mean1, yerr=std1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1, capsize=5)
-        ax.bar(x[1], mean2, yerr=std2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1, capsize=5)
+        ax.bar(x[0], mean1, yerr=std1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=2, capsize=5)
+        ax.bar(x[1], mean2, yerr=std2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=2, capsize=5)
     else:
         ax.bar(x[0], mean1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1)
         ax.bar(x[1], mean2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1)
@@ -361,7 +355,7 @@ def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, 
 
     return fig, ax
 
-def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color='black', mean_marker='o', x_limits=None, y_limits=None, show=False, close=True, show_axes='none'):
+def scatter_plot_with_stats(fig, ax,coords, point_color='darkgrey', background_color='black', mean_marker='o', x_limits=None, y_limits=None, show=False, close=True, show_axes='none'):
     """
     Plots a scatter plot with given coordinates, mean, and standard deviation lines.
     
@@ -386,18 +380,18 @@ def scatter_plot_with_stats(fig, ax,coords, point_color='blue', background_color
     std_x = np.nanstd(x_coords)
     std_y = np.nanstd(y_coords)
     
-    ax.scatter(x_coords, y_coords, color=point_color, s=50)
+    ax.scatter(x_coords, y_coords, color=point_color, s=20)
     
     # Plot standard deviation lines
-    ax.plot([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='white')
-    ax.plot([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='white')
+    ax.plot([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='black')
+    ax.plot([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='black')
     
     # Add '|' markers at the ends of the standard deviation lines
-    ax.scatter([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='white', marker='|', s=100)
-    ax.scatter([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='white', marker='_', s=100)
+    ax.scatter([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='black', marker='|', s=100)
+    ax.scatter([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='black', marker='_', s=100)
 
     # Plot mean point
-    ax.scatter(mean_x, mean_y, color='red', s=150, marker=mean_marker, zorder=3)
+    ax.scatter(mean_x, mean_y, color='red', s=50, marker=mean_marker, zorder=3)
     
     # Set background color
     ax.set_facecolor(background_color)

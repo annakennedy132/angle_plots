@@ -1,6 +1,6 @@
 import sys
 from utils import parse
-from classes.final_plots import FinalPlots
+from classes.new_plots import NewPlots
 
 def run():
 
@@ -8,15 +8,10 @@ def run():
     #mouse_type = input("Input blind mouse type: ")
     mouse_type="RD1"
 
-    fp = FinalPlots(FOLDER, mouse_type)
-    #fp.plot_global_data()
-    #fp.plot_event_data()
-    #fp.plot_stats_data()
-    fp.plot_tort_data()
-    #fp.plot_traj_data()
-    #fp.plot_prev_tort()
-    #fp.plot_avgs_data()
-    fp.save_pdfs()
+    np = NewPlots(FOLDER, mouse_type)
+    #np.plot_speed_data()
+    np.plot_behavior()
+    np.save_pdfs()
 
 def parse_args():
 

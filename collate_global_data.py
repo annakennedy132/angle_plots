@@ -12,6 +12,7 @@ def run():
     global_angles_data = {}
     global_locs_data = {}
     global_dist_data = {}
+    global_speed_data = {}
 
     if INDEX_FILE is not None:
 
@@ -27,11 +28,12 @@ def run():
 
         try:
 
-            global_angles, global_locs, global_dist = collation.read_global_data(path, folder_name, INDEX_FILE)
+            global_angles, global_locs, global_dist, global_speed = collation.read_global_data(path, folder_name, INDEX_FILE)
 
             global_angles_data.update(global_angles)
             global_locs_data.update(global_locs)
             global_dist_data.update(global_dist)
+            global_speed_data.update(global_speed)
 
             print(f"Successfuly collated {folder_name}")
         
@@ -47,6 +49,9 @@ def run():
             
         collated_global_dist_path = os.path.join(output_folder, "collated_global_distances.csv")
         collation.write_collated_data(collated_global_dist_path, global_dist_data)
+        
+        collated_global_speed_path = os.path.join(output_folder, "collated_global_speeds.csv")
+        collation.write_collated_data(collated_global_speed_path, global_speed_data)
 
 def parse_args():
 

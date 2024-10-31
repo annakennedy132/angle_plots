@@ -23,19 +23,26 @@ def read_global_data(data_folder_path, data_folder_name, index_file):
     ap_output_folder = next((folder for folder in os.listdir(analysis_folder) if folder.startswith("ap-output")), None)
     ap_output_path = os.path.join(analysis_folder, ap_output_folder)
 
-    files_list = os.listdir(ap_output_path)
+    ap_files_list = os.listdir(ap_output_path)
 
-    locs_file_name = [file for file in files_list if file.endswith("angles.csv")][0]
-    locs_file_path = os.path.join(ap_output_path, locs_file_name)
+    ap_locs_file_name = [file for file in ap_files_list if file.endswith("angles.csv")][0]
+    ap_locs_file_path = os.path.join(ap_output_path, ap_locs_file_name)
+
+    et_output_folder = next((folder for folder in os.listdir(analysis_folder) if folder.startswith("et-output")), None)
+    et_output_path = os.path.join(analysis_folder, et_output_folder)
+    et_files_list = os.listdir(et_output_path)
+    et_speeds_file_name = [file for file in et_files_list if file.endswith("speeds.csv")][0]
+    et_speeds_file_path = os.path.join(et_output_path, et_speeds_file_name)
 
     angles_dict = {}
     locs_dict = {}
     distances_dict ={}
+    speeds_dict = {}
 
     mouse_type = files.get_index_info(data_folder_name, index_file, item=1)
     mouse_age = files.get_index_info(data_folder_name, index_file, item=2)
 
-    with open(locs_file_path, newline="") as locs_file:
+    with open(ap_locs_file_path, newline="") as locs_file:
         globalreader = csv.reader(locs_file)
         
         # Skip header
@@ -49,14 +56,22 @@ def read_global_data(data_folder_path, data_folder_name, index_file):
 
         distances = next(globalreader)[1:]
         distances_dict[data_folder_name] = distances
+
+    with open(et_speeds_file_path, newline="") as speeds_file:
+        globalreader = csv.reader(speeds_file)
+        
+        # Skip header
+        next(globalreader)
+        speeds = [str(float(speed) * (46.5 / 645)) for speed in next(globalreader)[1:]]
+        speeds_dict[data_folder_name] = speeds
     
     # Insert age and type for all dictionaries
-    data_dicts = [angles_dict, locs_dict, distances_dict]
+    data_dicts = [angles_dict, locs_dict, distances_dict, speeds_dict]
     for data_dict in data_dicts:
         data_dict[data_folder_name].insert(0, mouse_age)
         data_dict[data_folder_name].insert(0, mouse_type)
 
-    return angles_dict, locs_dict, distances_dict
+    return angles_dict, locs_dict, distances_dict, speeds_dict
 
 def read_event_data(data_folder_path, data_folder_name, index_file):
     analysis_folder = os.path.join(data_folder_path, "analysis")
@@ -193,10 +208,10 @@ def read_event_data(data_folder_path, data_folder_name, index_file):
             next(eventreader)
 
             # Read speeds and store in speeds dict
-            speeds = next(eventreader)[1:601]
+            speeds = [str(float(speed) * (46.5 / 645)) if speed else 'nan' for speed in next(eventreader)[1:601]]
             speeds_dict[event_name] = speeds
 
-            all_event_speeds.append(np.array([float(speed) if speed else np.nan for speed in speeds]))
+            all_event_speeds.append(np.array([float(speed) * (46.5 / 645) if speed else np.nan for speed in speeds]))
 
             speeds_dict[event_name].insert(0, escape_success_list[i])
             speeds_dict[event_name].insert(0, mouse_age)

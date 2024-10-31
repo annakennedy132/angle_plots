@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from processing import event, data, angles, plots, stats
-from utils import files, distance, video
+from utils import files, utils, video
 
 class AnglePlots:
 
@@ -73,7 +73,7 @@ class AnglePlots:
         conversion_factor = 46.5 / 645
         self.angles, self.exit_coords = angles.get_angles_for_plot(self.video_file, self.head_coords, self.nose_coords, thumbnail_scale=0.6)
         self.distances_exit = [
-            distance.calc_distance_to_exit(row['nose_x'] if not pd.isna(row['nose_x']) else row['head_x'],
+            utils.calc_distance_to_exit(row['nose_x'] if not pd.isna(row['nose_x']) else row['head_x'],
                                            row['nose_y'] if not pd.isna(row['nose_y']) else row['head_y'],
                                            self.exit_coords) * conversion_factor
             for _, row in self.df.iterrows()
@@ -248,7 +248,7 @@ class AnglePlots:
                     during_stim_angles = self.angles_polar[event_t0:escape_frame]
                     after_stim_angles = self.angles_polar[return_frame:end]
                     if self.prev_escape_frame is not None:
-                        prev_esc_locs = self.distances_exit[self.prev_escape_frame:event_t0]
+                        prev_esc_locs = self.head_coords[self.prev_escape_frame:event_t0]
                     else:
                         prev_esc_locs = []
 
