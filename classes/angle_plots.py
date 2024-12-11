@@ -84,7 +84,9 @@ class AnglePlots:
 
         self.df.to_csv(csv_path, index=False)
 
-        self.exit_roi = video.get_exit_roi(self.exit_coords)
+        self.exit_
+        
+        roi = video.get_exit_roi(self.exit_coords)
         
     def save_angles(self, suffix="angles"):
         df = pd.DataFrame((self.angles, self.head_coords, self.distances_exit))

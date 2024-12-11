@@ -9,9 +9,15 @@ def run():
     mouse_type="RD1"
 
     np = NewPlots(FOLDER, mouse_type)
-    #np.plot_speed_data()
-    np.plot_behavior()
-    np.save_pdfs()
+    #np.plot_speed_data_bars()
+    np.plot_speed_data_heatmap()
+    #np.plot_behavior()
+    #np.plot_behavior_esc()
+    #np.plot_behavior_no_esc()
+    #np.plot_coverage_data()
+    #np.plot_location_esc_data()
+    #np.plot_time_to_find_escape()
+    #np.save_pdfs()
 
 def parse_args():
 
@@ -31,4 +37,3 @@ def parse_args():
 
 if __name__ == "__main__":
     run()
-

@@ -35,12 +35,12 @@ def calculate_arena_coverage(locations, grid_size=20, arena_bounds=(90, 790, 80,
 
         return coverage_percentages
 
-def categorize_behavior(total_angle_change, total_distance):
+def categorise_behavior(total_angle_change, total_distance):
     # Thresholds for behavior categorization based on total distance and total angle change
     stationary_dist_threshold = 35
     directed_dist_threshold = 100
-    stationary_angle_threshold = 200
-    directed_angle_threshold = 300
+    stationary_angle_threshold = 500
+    directed_angle_threshold = 500
 
     if total_distance < stationary_dist_threshold and total_angle_change < stationary_angle_threshold:
         return "stationary"
@@ -49,7 +49,7 @@ def categorize_behavior(total_angle_change, total_distance):
     else: 
         return "exploratory"
 
-def analyze_behavior(angles, locs, fps):
+def analyse_behavior(angles, locs, fps):
     time_frame = fps * 1  # 2 seconds chunks (assuming 30 fps, this would be 60 frames)
     num_chunks = len(angles) // time_frame
 
@@ -73,12 +73,15 @@ def analyze_behavior(angles, locs, fps):
         total_distance = calc_dist_between_points(valid_distances[-1], valid_distances[0])
 
         # Categorize behavior based on the new angle and distance calculations
-        behavior = categorize_behavior(total_angle_change, total_distance)
+        behavior = categorise_behavior(total_angle_change, total_distance)
         if behavior in behavior_counts:
             behavior_counts[behavior] += 1
 
-    total_chunks = num_chunks
-    behavior_percentages = {behavior: count / total_chunks * 100 for behavior, count in behavior_counts.items()}
+    total_count = sum(behavior_counts.values())
+    if total_count == 0:
+        return None
+
+    behavior_percentages = {behavior: count / total_count * 100 for behavior, count in behavior_counts.items()}
     
     return behavior_percentages
     
@@ -89,7 +92,7 @@ def compute_mean_behavior(all_angles, all_distances):
 
         # Process each list of angles and distances
         for angles, distances in zip(all_angles, all_distances):
-            behavior_percentages = analyze_behavior(angles, distances)
+            behavior_percentages = analyse_behavior(angles, distances)
 
             # Accumulate behavior percentages
             for behavior, percentage in behavior_percentages.items():
@@ -100,3 +103,87 @@ def compute_mean_behavior(all_angles, all_distances):
 
         return mean_behavior_counts
 
+def analyse_locs(all_locs, fps, centre_roi):
+    centre_times = []
+    edge_times = []
+    
+    for locs_list in all_locs:
+        centre_count = 0
+        edge_count = 0
+        for loc in locs_list:
+            if not np.isnan(loc).any():
+                if (centre_roi[0] <= loc[0] <= centre_roi[2]) and (centre_roi[1] >= loc[1] >= centre_roi[3]):
+                    centre_count += 1
+                else:
+                    edge_count += 1
+            elif np.isnan(loc).any():
+                continue
+                
+        # Convert frame counts to time in seconds
+        centre_times.append(centre_count / fps)
+        edge_times.append(edge_count / fps)
+
+    centre_mean = np.nanmean(centre_times)
+    centre_std = np.nanstd(centre_times)
+    edge_mean = np.nanmean(edge_times)
+    edge_std = np.nanstd(edge_times)
+
+    return centre_mean, centre_std, edge_mean, edge_std
+
+def categorise_location(locs):
+    exit_roi = [650, 500, 800, 240]
+    centre_roi = [200, 570, 670, 170]
+
+    centre_count = 0
+    edge_count = 0
+    exit_count = 0
+    nest_count = 0
+
+    for loc in locs:
+
+        if not all(np.isnan(loc)):
+            if (centre_roi[0] <= loc[0] <= centre_roi[2]) and (centre_roi[1] >= loc[1] >= centre_roi[3]):
+                centre_count += 1
+            if (exit_roi[0] <= loc[0] <= exit_roi[2]) and (exit_roi[1] >= loc[1] >= exit_roi[3]):
+                exit_count += 1
+            else:
+                edge_count += 1
+        else:
+            nest_count += 1
+    
+    centre_count = centre_count / len(locs) * 100
+    edge_count = edge_count / len(locs) * 100
+    exit_count = exit_count / len(locs) * 100
+    nest_count = nest_count / len(locs) * 100
+
+    return centre_count, edge_count, exit_count, nest_count
+
+def mice_that_enter_exit_roi(locs_list, exit_roi = [650, 240, 800, 500], min_escape_frames=5):
+    exit_roi_mice = 0
+    escape_mice = 0
+
+    for locs in locs_list:
+        for i in range(0, len(locs)):
+            if exit_roi is not None:
+                coord_in_roi = (exit_roi[0] <= locs[i][0] <= exit_roi[2]) and \
+                                                (exit_roi[1] <= locs[i][1] <= exit_roi[3])
+                if coord_in_roi:
+                    exit_roi_mice += 1
+                    break
+
+    for locs in locs_list:
+            for i in range(0, len(locs) - min_escape_frames + 1):
+                if all(np.isnan(locs[j][0]) and np.isnan(locs[j][1]) for j in range(i, i + min_escape_frames)):
+                    last_coord_index = i - 1
+                    if exit_roi is not None:
+                        if last_coord_index >= 0:
+                            last_coord_in_roi = (exit_roi[0] <= locs[last_coord_index][0] <= exit_roi[2]) and \
+                                                (exit_roi[1] <= locs[last_coord_index][1] <= exit_roi[3])
+                            if last_coord_in_roi:
+                                escape_mice += 1
+                                break
+    
+    percentage_exit_roi_mice = exit_roi_mice / len(locs_list) * 100
+    percentage_escape_mice = escape_mice / len(locs_list) * 100
+                     
+    return percentage_exit_roi_mice, percentage_escape_mice

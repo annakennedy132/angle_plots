@@ -61,102 +61,11 @@ class FinalPlots:
         plots.plot_coords(fig, ax1, wt_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True, colorbar=False)
         plots.plot_coords(fig, ax2, blind_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=80, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True)
 
-        wt_coverage = utils.calculate_arena_coverage(all_wt_locs)
-        blind_coverage = utils.calculate_arena_coverage(all_blind_locs)
-
-        fig, ax = plt.subplots(figsize=(4,3))
-        self.figs.append(fig)
-        plots.plot_bar_two_groups(fig, ax, 
-            wt_coverage, 
-            blind_coverage,
-            x_label=None,
-            y_label='% Arena Covered', 
-            bar1_label='WT Mice', 
-            bar2_label=f'{self.mouse_type} Mice', 
-            color1='tab:blue', 
-            color2='mediumseagreen', 
-            bar_width=0.001, 
-            points=True, 
-            log_y=False, 
-            error_bars=False,
-            show_axes='both',
-            title=None)
-
     def plot_event_data(self):
         wt_before_angles, blind_before_angles = data.extract_data(self.event_angles_file, nested=False, data_start=4, data_end=154)
         wt_after_angles, blind_after_angles = data.extract_data(self.after_angles_file, nested=False, data_start=4)
         wt_during_angles, blind_during_angles = data.extract_data(self.during_angles_file, nested=False, data_start=4)
-        wt_true_after_angles, wt_false_after_angles, blind_true_after_angles, blind_false_after_angles = data.extract_data(self.after_angles_file, nested=False, data_start=4, escape=True, escape_col=3)
-        wt_true_during_angles, wt_false_during_angles, blind_true_during_angles, blind_false_during_angles = data.extract_data(self.during_angles_file, nested=False, data_start=4, escape=True, escape_col=3)
-        event_wt_locs, event_blind_locs = data.extract_data(self.event_locs_file, nested=True, data_start=154, data_end=None, escape=False, process_coords=True, get_escape_index=False, escape_col=3)
-        wt_true_locs, wt_false_locs, blind_true_locs, blind_false_locs = data.extract_data(self.event_locs_file, data_start=154, escape=True, process_coords=True, get_escape_index=True, escape_col=3)
-
-        '''fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10), subplot_kw=dict(projection='polar'))
-        fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and {self.mouse_type} Before Events / Time to Escape')
-        self.figs.append(fig)
-        ax1.set_title('WT - escape')
-        plots.plot_polar_chart(fig, ax1, wt_true_during_angles, bins=36, show=False, close=True)
-        ax2.set_title('WT - no escape')
-        plots.plot_polar_chart(fig, ax2, wt_false_during_angles, bins=36, show=False, close=True)
-        ax3.set_title(f'{self.mouse_type} - escape')
-        plots.plot_polar_chart(fig, ax3, blind_true_during_angles, bins=36, show=False, close=True)
-        ax4.set_title(f'{self.mouse_type} - no escape')
-        plots.plot_polar_chart(fig, ax4, blind_false_during_angles, bins=36, show=False, close=True)
-
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10), subplot_kw=dict(projection='polar'))
-        fig.suptitle(f'Polar Plot Comparing Facing Angles of WT and Blind Mice After Events / Return from Nest')
-        self.figs.append(fig)
-        ax1.set_title('WT - escape')
-        plots.plot_polar_chart(fig, ax1, wt_true_after_angles, bins=36, show=False, close=True)
-        ax2.set_title('WT - no escape')
-        plots.plot_polar_chart(fig, ax2, wt_false_after_angles, bins=36, show=False, close=True)
-        ax3.set_title(f'{self.mouse_type} - escape')
-        plots.plot_polar_chart(fig, ax3, blind_true_after_angles, bins=36, show=False, close=True)
-        ax4.set_title(f'{self.mouse_type} - no escape')
-        plots.plot_polar_chart(fig, ax4, blind_false_after_angles, bins=36, show=False, close=True)'''
-
-        wt_coverage = utils.calculate_arena_coverage(event_wt_locs)
-        blind_coverage = utils.calculate_arena_coverage(event_blind_locs)
-
-        fig, ax = plt.subplots(figsize=(4,5))
-        self.figs.append(fig)
-        plots.plot_bar_two_groups(fig, ax, 
-            wt_coverage, 
-            blind_coverage,
-            x_label=None,
-            y_label='% Arena Covered', 
-            bar1_label='WT Mice', 
-            bar2_label=f'{self.mouse_type} Mice', 
-            color1='tab:blue', 
-            color2='mediumseagreen', 
-            bar_width=0.2, 
-            points=True, 
-            log_y=False, 
-            error_bars=False,
-            show_axes='both',
-            title=None)
         
-        wt_true_coverage = utils.calculate_arena_coverage(wt_true_locs)
-        wt_false_coverage = utils.calculate_arena_coverage(wt_false_locs)
-        blind_true_coverage = utils.calculate_arena_coverage(blind_true_locs)
-        blind_false_coverage = utils.calculate_arena_coverage(blind_false_locs)
-
-        fig, ax = plt.subplots(figsize=(8,5))
-        self.figs.append(fig)
-        plots.plot_grouped_bar_chart(fig, ax, 
-                                    wt_true_coverage,
-                                    wt_false_coverage, 
-                                    blind_true_coverage,
-                                    blind_false_coverage,
-                                    ["WT - escape", "WT - no escape", f"{self.mouse_type} - escape", f"{self.mouse_type} - no escape"],
-                                    "Mouse Type", 
-                                    "% Arena Covered After Stimulus",
-                                    colors=['tab:blue', 'mediumblue', 'green', 'mediumseagreen'], 
-                                    bar_width=0.35,
-                                    log_y=False, 
-                                    show=False, 
-                                    close=True)
-
         # Plot polar plots
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 5), subplot_kw=dict(projection='polar'))
         self.figs.append(fig)
@@ -544,4 +453,4 @@ class FinalPlots:
     def save_pdfs(self):
         if self.save_figs:
             if self.figs:
-                files.save_report(self.figs, self.folder, "tort")
+                files.save_report(self.figs, self.folder)

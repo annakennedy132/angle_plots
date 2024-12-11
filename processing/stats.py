@@ -80,3 +80,36 @@ def find_return_frame(post_stim_coords, escape_frame, min_return_frames=15):
 
     return return_frame
 
+def find_global_esc_frame(coords, min_escape_frames=5, exit_roi=None, fps=30):
+
+    # Ensure coords is a list of tuples or (nan, nan)
+    cleaned_coords = []
+    for item in coords:
+        if isinstance(item, tuple) and len(item) == 2:
+            cleaned_coords.append(item)
+        elif np.isnan(item):  # If it's a float (nan), replace it with (nan, nan)
+            cleaned_coords.append((np.nan, np.nan))
+        else:
+            raise ValueError(f"Invalid coordinate format: {item}")
+
+    # Find the first valid coordinate (non-(nan, nan))
+    enter_index = None
+    for i in range(len(cleaned_coords)):
+        x, y = cleaned_coords[i]
+        if not np.isnan(x) and not np.isnan(y):  # Check if both x and y are valid
+            enter_index = i
+            break
+
+    for escape_index in range(enter_index, len(cleaned_coords) - min_escape_frames + 1):
+        if all(np.isnan(cleaned_coords[j][0]) and np.isnan(cleaned_coords[j][1]) for j in range(escape_index, escape_index + min_escape_frames)):
+            last_coord_index = escape_index - 1
+            # Check if the last valid coordinate is within the exit ROI
+            if exit_roi is not None and last_coord_index >= 0:
+                last_coord = cleaned_coords[last_coord_index]
+                x, y = last_coord
+                if not (exit_roi[0] <= x <= exit_roi[2] and exit_roi[1] <= y <= exit_roi[3]):
+                    continue
+            
+            # Calculate the time to escape in seconds
+            time_to_escape = escape_index / fps
+            return time_to_escape

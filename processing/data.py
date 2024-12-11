@@ -35,7 +35,7 @@ def extract_h5_data(df):
 
     return head_x, head_coords, nose_coords, frames, stim
 
-def extract_data_rows(file, data_row=None, escape=False):
+def extract_data_rows(file, data_row=None, escape=False, process_coords=False):
     wt_data = []
     blind_data = []
     wt_false_data = []
@@ -55,6 +55,11 @@ def extract_data_rows(file, data_row=None, escape=False):
                 column_data = float(column_data)
             except ValueError:
                 pass
+        
+        if process_coords:
+            column_data = parse.parse_coord(column_data)
+        else:
+            pass
 
         if escape:
             if escape_success_col in ['True', 'TRUE']:

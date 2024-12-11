@@ -72,3 +72,4 @@ def get_exit_roi(exit_coord):
            exit_y + 100]
     
     return roi
+
