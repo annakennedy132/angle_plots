@@ -43,8 +43,8 @@ class NewPlots:
     def plot_behavior(self):
         wt_event_angles, blind_event_angles = data.extract_data(self.event_angles_file, data_start=154)
         wt_event_locs, blind_event_locs = data.extract_data(self.event_locs_file, data_start=154, process_coords=True)
-        wt_baseline_angles, blind_baseline_angles = data.extract_data(self.global_angles_file, data_start=4)
-        wt_baseline_locs, blind_baseline_locs = data.extract_data(self.global_locs_file, data_start=4, process_coords=True)
+        wt_baseline_angles, blind_baseline_angles = data.extract_data(self.global_angles_file, data_start=4, data_end=5400)
+        wt_baseline_locs, blind_baseline_locs = data.extract_data(self.global_locs_file, data_start=4, data_end=5400, process_coords=True)
         angle_sets = [wt_baseline_angles, wt_event_angles, blind_baseline_angles, blind_event_angles]
         locs_sets = [wt_baseline_locs, wt_event_locs, blind_baseline_locs, blind_event_locs]
 
@@ -93,13 +93,13 @@ class NewPlots:
         axes[1, 1].pie(blind_event_behavior.values(), labels=blind_event_behavior.keys(), autopct='%1.1f%%', colors=['lightblue', 'orange', 'green', 'yellow'])
         axes[1, 1].set_title(f'{self.mouse_type} Event')
 
-        plt.close()
+        plt.show()
 
     def plot_behavior_esc(self):
         wt_event_angles, wt_false_angles, blind_event_angles, blind_false_angles = data.extract_data(self.event_angles_file, data_start=154, escape=True, escape_col=3)
         wt_event_locs, wt_false_locs, blind_event_locs, blind_false_locs = data.extract_data(self.event_locs_file, data_start=154, escape=True, escape_col=3, process_coords=True)
-        wt_baseline_angles, blind_baseline_angles = data.extract_data(self.global_angles_file, data_start=4)
-        wt_baseline_locs, blind_baseline_locs = data.extract_data(self.global_locs_file, data_start=4, process_coords=True)
+        wt_baseline_angles, blind_baseline_angles = data.extract_data(self.global_angles_file, data_start=4, data_end=5400)
+        wt_baseline_locs, blind_baseline_locs = data.extract_data(self.global_locs_file, data_start=4, data_end=5400, process_coords=True)
         angle_sets = [wt_baseline_angles, wt_event_angles, blind_baseline_angles, blind_event_angles]
         locs_sets = [wt_baseline_locs, wt_event_locs, blind_baseline_locs, blind_event_locs]
 
@@ -148,11 +148,13 @@ class NewPlots:
         axes[1, 1].pie(blind_event_behavior.values(), labels=blind_event_behavior.keys(), autopct='%1.1f%%', colors=['lightblue', 'orange', 'green', 'yellow'])
         axes[1, 1].set_title(f'{self.mouse_type} Event')
 
+        plt.show()
+
     def plot_behavior_no_esc(self):
         wt_true_angles, wt_event_angles, blind_true_angles, blind_event_angles = data.extract_data(self.event_angles_file, data_start=154, escape=True, escape_col=3)
         wt_true_locs, wt_event_locs, blind_true_locs, blind_event_locs = data.extract_data(self.event_locs_file, data_start=154, escape=True, escape_col=3, process_coords=True)
-        wt_baseline_angles, blind_baseline_angles = data.extract_data(self.global_angles_file, data_start=4)
-        wt_baseline_locs, blind_baseline_locs = data.extract_data(self.global_locs_file, data_start=4, process_coords=True)
+        wt_baseline_angles, blind_baseline_angles = data.extract_data(self.global_angles_file, data_start=4, data_end=5400)
+        wt_baseline_locs, blind_baseline_locs = data.extract_data(self.global_locs_file, data_start=4, data_end=5400, process_coords=True)
         angle_sets = [wt_baseline_angles, wt_event_angles, blind_baseline_angles, blind_event_angles]
         locs_sets = [wt_baseline_locs, wt_event_locs, blind_baseline_locs, blind_event_locs]
 
@@ -201,6 +203,8 @@ class NewPlots:
         axes[1, 1].pie(blind_event_behavior.values(), labels=blind_event_behavior.keys(), autopct='%1.1f%%', colors=['lightblue', 'orange', 'green', 'yellow'])
         axes[1, 1].set_title(f'{self.mouse_type} Event')
 
+        plt.show()
+
     def plot_speed_data_bars(self):
         global_wt_speeds, global_blind_speeds = data.extract_data(self.global_speeds_file, data_start=4)
         wt_speeds, blind_speeds = data.extract_data(self.event_speeds_file, data_start=4, data_end=454)
@@ -234,7 +238,7 @@ class NewPlots:
         bar_width = 0.3
         x = np.array([0, 1])  # Two main groups (0 for WT, 1 for Blind)
 
-        fig, axs = plt.subplots(1, 3, figsize=(10, 4))
+        fig, axs = plt.subplots(1, 3, figsize=(12, 4))
         self.figs.append(fig)
 
         # Calculate means and standard deviations for error bars
@@ -284,9 +288,6 @@ class NewPlots:
         axs[2].bar(x[1] + bar_width/2, blind_max_ratio, width=bar_width, color='black', alpha=0.3, capsize=5, label="max")
         axs[2].legend()
 
-        # Setting titles
-        axs[0].set_title('Average Speeds')
-        axs[1].set_title('Maximum Speeds')
         axs[2].set_title('Ratio - Baseline vs Event')
 
         # Set x-ticks and labels
@@ -296,15 +297,20 @@ class NewPlots:
         axs[1].set_xticklabels(['WT', f'{self.mouse_type}'])
         axs[2].set_xticks(x)
         axs[2].set_xticklabels(['WT', f'{self.mouse_type}'])
+        axs[0].set_ylabel("Average Speed (pps)")
+        axs[1].set_ylabel("Maximum Speed (pps)")
 
         # Remove right and top spines
         for ax in axs:
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
 
-        # Set y-labels
-        for ax in axs[0:1]:
-            ax.set_ylabel('Speed (pps)')
+        # Update legend settings for better positioning and smaller font size
+        for ax in axs:
+            ax.legend(loc='upper left', fontsize='small', frameon=False, bbox_to_anchor=(1.05, 1))
+        # Adjust layout to minimize overlap
+        plt.tight_layout()
+        plt.show()
 
     def plot_speed_data_heatmap(self):
         wt_speeds, blind_speeds = data.extract_data(self.event_speeds_file, data_start=4, data_end=454)
@@ -391,8 +397,7 @@ class NewPlots:
         cbar.set_label('Speed (pps)', rotation=270, labelpad=10)
         cbar.outline.set_visible(False)
 
-        plt.show()
-
+        #plt.show()
         
         wt_true_age_speed_pairs = sorted(zip(wt_true_ages, wt_true_speeds), key=lambda x: x[0])
         wt_false_age_speed_pairs = sorted(zip(wt_false_ages, wt_false_speeds), key=lambda x: x[0])
@@ -411,50 +416,100 @@ class NewPlots:
         blind_true_sorted_speeds = list(blind_true_sorted_speeds)
         blind_false_sorted_speeds = list(blind_false_sorted_speeds)
 
-        # Add colorbar for the heatmaps
-        cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.7])
+        avg_speeds_data = [
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in wt_true_speeds]) for i in range(max(map(len, wt_true_speeds)))],
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in blind_true_speeds]) for i in range(max(map(len, blind_true_speeds)))],
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in wt_false_speeds]) for i in range(max(map(len, wt_false_speeds)))],
+            [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in blind_false_speeds]) for i in range(max(map(len, blind_false_speeds)))]
+        ]
+
+        wt_true_avg_speeds = avg_speeds_data[0]
+        blind_true_avg_speeds = avg_speeds_data[1]
+        wt_false_avg_speeds = avg_speeds_data[2]
+        blind_false_avg_speeds = avg_speeds_data[2]
+
+        # Create figure and axes for 4 line plots and 4 heatmaps
+        fig, axes = plt.subplots(4, 2, figsize=(10,8), gridspec_kw={'height_ratios': [1, 2, 1, 2]}, sharex='col')
+
+        # Plot average speeds above the heatmaps
+        axes[0, 0].plot(wt_true_avg_speeds, color='red')
+        axes[0, 0].set_title('Average WT Speed (escape)')
+        axes[0, 0].set_ylabel('Speed (pps)')
+        axes[0, 0].set_ylim(0, 250)
+        axes[0, 0].spines['left'].set_visible(False)
+        axes[0, 0].spines['right'].set_visible(False)
+        axes[0, 0].spines['top'].set_visible(False)
+        axes[0, 0].spines['bottom'].set_visible(False)
+        axes[0, 0].get_xaxis().set_visible(False)
+
+        axes[0, 1].plot(wt_false_avg_speeds, color='red')
+        axes[0, 1].set_title(f'Average WT Speed (no escape)')
+        axes[0, 1].set_ylim(0, 250)
+        axes[0, 1].spines['left'].set_visible(False)
+        axes[0, 1].spines['right'].set_visible(False)
+        axes[0, 1].spines['top'].set_visible(False)
+        axes[0, 1].spines['bottom'].set_visible(False)
+        axes[0, 1].get_xaxis().set_visible(False)
+
+        axes[2, 0].plot(blind_true_avg_speeds, color='red')
+        axes[2, 0].set_title(f'Average {self.mouse_type} Speed (escape)')
+        axes[2, 0].set_ylabel('Speed (pps)')
+        axes[2, 0].set_ylim(0, 250)
+        axes[2, 0].spines['left'].set_visible(False)
+        axes[2, 0].spines['right'].set_visible(False)
+        axes[2, 0].spines['top'].set_visible(False)
+        axes[2, 0].spines['bottom'].set_visible(False)
+        axes[2, 0].get_xaxis().set_visible(False)
+
+        axes[2, 1].plot(blind_false_avg_speeds, color='red')
+        axes[2, 1].set_title(f'Average {self.mouse_type} Speed (no escape)')
+        axes[2, 1].set_ylim(0, 250)
+        axes[2, 1].spines['left'].set_visible(False)
+        axes[2, 1].spines['right'].set_visible(False)
+        axes[2, 1].spines['top'].set_visible(False)
+        axes[2, 1].spines['bottom'].set_visible(False)
+        axes[2, 1].get_xaxis().set_visible(False)
+
+        # Plot the heatmaps below each line plot
+        sns.heatmap(wt_true_sorted_speeds, ax=axes[1, 0], cmap='viridis', cbar=False, vmin=vmin, vmax=vmax)
+        axes[1, 0].set_title('WT Speed (pps)')
+        axes[1, 0].set_ylabel('Trial')
+        axes[1, 0].axvline(150, color='black', linewidth=2)
+        axes[1, 0].set_yticks([])
+        axes[1, 0].set_xticks(x_ticks)
+        axes[1, 0].set_xticklabels(x_labels)
+
+        sns.heatmap(wt_false_sorted_speeds, ax=axes[1, 1], cmap='viridis', cbar=False, vmin=vmin, vmax=vmax)
+        axes[1, 1].set_title('WT Speed (pps)')
+        axes[1, 1].set_ylabel('Trial')
+        axes[1, 1].axvline(150, color='black', linewidth=2)
+        axes[1, 1].set_yticks([])
+        axes[1, 1].set_xticks(x_ticks)
+        axes[1, 1].set_xticklabels(x_labels)
+
+        sns.heatmap(blind_true_sorted_speeds, ax=axes[3, 0], cmap='viridis', cbar=False, vmin=vmin, vmax=vmax)
+        axes[3, 0].set_title(f'{self.mouse_type} Speed (pps)')
+        axes[3, 0].set_ylabel('Trial')
+        axes[3, 0].axvline(150, color='black', linewidth=2)
+        axes[3, 0].set_yticks([])
+        axes[3, 0].set_xticks(x_ticks)
+        axes[3, 0].set_xticklabels(x_labels)
+
+        sns.heatmap(blind_false_sorted_speeds, ax=axes[3, 1], cmap='viridis', cbar=False, vmin=vmin, vmax=vmax)
+        axes[3, 1].set_title(f'{self.mouse_type} Speed (pps)')
+        axes[3, 1].set_ylabel('Trial')
+        axes[3, 1].axvline(150, color='black', linewidth=2)
+        axes[3, 1].set_yticks([])
+        axes[3, 1].set_xticks(x_ticks)
+        axes[3, 1].set_xticklabels(x_labels)
+
         norm = plt.Normalize(vmin=vmin, vmax=vmax)
-        sm = plt.cm.ScalarMappable(cmap='viridis', norm=norm)
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+        cbar_ax = fig.add_axes([0.92, 0.11, 0.015, 0.22])
         cbar = fig.colorbar(sm, cax=cbar_ax)
+        cbar.set_label('Speed (pps)', rotation=270, labelpad=10)
         cbar.outline.set_visible(False)
-        cbar_ax.set_position([0.93, 0.11, 0.02, 0.525])
-
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14,8))
-        #self.figs.append(fig)
-
-        # Plot WT Mice Speed Heatmap
-        sns.heatmap(wt_true_sorted_speeds, ax=ax1, cmap='viridis', cbar=True, vmin=vmin, vmax=vmax)
-        ax1.set_title('WT Speed - Escape (pps)')
-        ax1.set_ylabel('Trial')
-        ax1.axvline(150, color='black', linewidth=2)
-        ax1.set_yticks([])
-        ax1.set_xticks(x_ticks)
-
-        sns.heatmap(wt_false_sorted_speeds, ax=ax2, cmap='viridis', cbar=True, vmin=vmin, vmax=vmax)
-        ax2.set_title('WT Speed - No Escape (pps)')
-        ax2.set_xlabel('Time (s)')
-        ax2.axvline(150, color='black', linewidth=2)
-        ax2.set_yticks([])
-        ax2.set_xticks(x_ticks)
-
-        sns.heatmap(blind_true_sorted_speeds, ax=ax3, cmap='viridis', cbar=True, vmin=vmin, vmax=vmax)
-        ax3.set_title(f'{self.mouse_type} Speed - Escape (pps)')
-        ax3.set_ylabel('Trial')
-        ax3.axvline(150, color='black', linewidth=2)
-        ax3.set_yticks([])
-        ax3.set_xticks(x_ticks)
-        ax3.set_xticklabels(x_labels)
-
-        sns.heatmap(blind_false_sorted_speeds, ax=ax4, cmap='viridis', cbar=True, vmin=vmin, vmax=vmax)
-        ax4.set_title(f'{self.mouse_type} Speed - No Escape (pps)')
-        ax4.set_xlabel('Time (s)')
-        ax4.axvline(150, color='black', linewidth=2)
-        ax4.set_yticks([])
-        ax4.set_xticks(x_ticks)
-        ax4.set_xticklabels(x_labels)
-
-        plt.tight_layout()
-        #plt.show()
+        plt.show()
 
     def plot_coverage_data(self):
         event_wt_locs, event_blind_locs = data.extract_data(self.event_locs_file, nested=True, data_start=154, data_end=None, escape=False, process_coords=True, get_escape_index=False, escape_col=3)
@@ -612,7 +667,7 @@ class NewPlots:
         x = np.array([0, 1])  
 
         # Create subplots
-        fig, axs = plt.subplots(1, 2, figsize=(5,4))
+        fig, axs = plt.subplots(1, 2, figsize=(8,4))
         self.figs.append(fig)
 
         axs[0].bar(x[0] - bar_width/2, wt_baseline_centre_mean, width=bar_width, color='blue', capsize=5, label="centre")
@@ -639,23 +694,21 @@ class NewPlots:
 
         # Set y-labels
         for ax in axs[0:1]:
-            ax.set_ylabel('Time (s)')
+            ax.set_ylabel('Time spent (%)')
+            ax.set_ylim(0,100)
 
-        fig.suptitle("Time spent in Centre vs Edge")
+        # Update legend settings for better positioning and smaller font size
+        for ax in axs:
+            ax.legend(loc='upper left', fontsize='small', frameon=False, bbox_to_anchor=(1.05, 1))
+
+        # Adjust layout to minimize overlap
+        plt.tight_layout()
+        plt.show()
 
     def plot_location_esc_data(self):
-        final_wt_locs, final_blind_locs = data.extract_data_rows(self.event_locs_file, data_row=454, process_coords=True)
-        first_wt_locs, first_blind_locs = data.extract_data_rows(self.event_locs_file, data_row=154)
-        wt_event_locs, blind_event_locs = data.extract_data(self.event_locs_file, nested=True, data_start=154, process_coords=True)
-
-        #if distance between first and final loc is less than x, categorise as freeze. "fleeing" mice are those that are left, which can be fed into
-        #categorise location
-        #from here could do something with mice that go back to where they just came from - eg further categorise freeze into those that dont move at all
-        #and those that have returned to the same place
-        #for this would have to look at the rest of data to see if mouse has moved (or data row 4 from before stimulus)
-
-        '''wt_centre, wt_edge, wt_exit, wt_nest = utils.categorise_location(final_wt_locs)
-        blind_centre, blind_edge, blind_exit, blind_nest = utils.categorise_location(final_blind_locs)
+        wt_event_locs, blind_event_locs = data.extract_data(self.event_locs_file, nested=True, data_start=154, data_end=None, process_coords=True)
+        wt_centre, wt_edge, wt_exit, wt_nest = utils.categorise_location(wt_event_locs)
+        blind_centre, blind_edge, blind_exit, blind_nest = utils.categorise_location(blind_event_locs)
 
         fig, ax = plt.subplots(figsize=(4,4))
         self.figs.append(fig)
@@ -665,10 +718,10 @@ class NewPlots:
         ax.bar(x[1], wt_edge, width=bar_width, color='green', alpha=0.5, capsize=5, label="edge")
         ax.bar(x[2], wt_exit, width=bar_width, color='yellow', alpha=0.5, capsize=5, label="exit region")
         ax.bar(x[3], wt_nest, width=bar_width, color='orange', alpha=0.5, capsize=5, label="nest")
-        ax.set_title("Location when stimulus ends (WT)")
+        ax.set_title("Location over stimulus (WT)")
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.set_ylabel("% mice")
+        ax.set_ylabel("% time")
         ax.set_xticks(x)
         ax.set_ylim(0,60)
         ax.set_xticklabels(['centre', 'edge', 'exit \n region', 'nest'])
@@ -681,13 +734,13 @@ class NewPlots:
         ax.bar(x[1], blind_edge, width=bar_width, color='green', alpha=0.5, capsize=5, label="edge")
         ax.bar(x[2], blind_exit, width=bar_width, color='yellow', alpha=0.5, capsize=5, label="exit region")
         ax.bar(x[3], blind_nest, width=bar_width, color='orange', alpha=0.5, capsize=5, label="nest")
-        ax.set_title("Location when stimulus ends (RD1)")
+        ax.set_title("Location over stimulus (RD1)")
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.set_ylabel("% mice")
+        ax.set_ylabel("% time")
         ax.set_ylim(0,60)
         ax.set_xticks(x)
-        ax.set_xticklabels(['centre', 'edge', 'exit \n region', 'nest'])'''
+        ax.set_xticklabels(['centre', 'edge', 'exit \n region', 'nest'])
 
         wt_exit_roi_mice, wt_escape_mice = utils.mice_that_enter_exit_roi(wt_event_locs)
         blind_exit_roi_mice, blind_escape_mice = utils.mice_that_enter_exit_roi(blind_event_locs)
@@ -700,7 +753,7 @@ class NewPlots:
         ax.bar(x[0] + bar_width/2, wt_escape_mice, width=bar_width, color='blue', alpha=0.3, capsize=5)
         ax.bar(x[1] - bar_width/2, blind_exit_roi_mice, width=bar_width, color='green', alpha=0.5, capsize=5)
         ax.bar(x[1] + bar_width/2, blind_escape_mice, width=bar_width, color='green', alpha=0.3, capsize=5)
-        ax.set_title("% Mice that enter the nest region during events \n and those that escape")
+        ax.set_title("% Mice that enter the nest region during events (left) \n and those that escape (right)")
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_ylabel("% mice")
@@ -755,4 +808,4 @@ class NewPlots:
     def save_pdfs(self):
         if self.save_figs:
             if self.figs:
-                files.save_report(self.figs, self.folder, "new")
+                files.save_report(self.figs, self.folder, "behaviour")

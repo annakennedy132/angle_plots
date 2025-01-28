@@ -134,29 +134,45 @@ def categorise_location(locs):
     exit_roi = [650, 500, 800, 240]
     centre_roi = [200, 570, 670, 170]
 
-    centre_count = 0
-    edge_count = 0
-    exit_count = 0
-    nest_count = 0
-
-    for loc in locs:
-
-        if not all(np.isnan(loc)):
-            if (centre_roi[0] <= loc[0] <= centre_roi[2]) and (centre_roi[1] >= loc[1] >= centre_roi[3]):
-                centre_count += 1
-            if (exit_roi[0] <= loc[0] <= exit_roi[2]) and (exit_roi[1] >= loc[1] >= exit_roi[3]):
-                exit_count += 1
-            else:
-                edge_count += 1
-        else:
-            nest_count += 1
+    centre_times = []
+    edge_times = []
+    exit_times = []
+    nest_times = []
     
-    centre_count = centre_count / len(locs) * 100
-    edge_count = edge_count / len(locs) * 100
-    exit_count = exit_count / len(locs) * 100
-    nest_count = nest_count / len(locs) * 100
+    for locs_list in locs:
 
-    return centre_count, edge_count, exit_count, nest_count
+        centre_count = 0
+        edge_count = 0
+        exit_count = 0
+        nest_count = 0
+
+        for loc in locs_list:
+            if not np.isnan(loc).any():
+                if (centre_roi[0] <= loc[0] <= centre_roi[2]) and (centre_roi[1] >= loc[1] >= centre_roi[3]):
+                    centre_count += 1
+                elif (exit_roi[0] <= loc[0] <= exit_roi[2]) and (exit_roi[1] >= loc[1] >= exit_roi[3]):
+                    exit_count += 1
+                else:
+                    edge_count += 1
+            else:
+                nest_count += 1
+    
+        centre_count = centre_count / len(locs_list) * 100
+        edge_count = edge_count / len(locs_list) * 100
+        exit_count = exit_count / len(locs_list) * 100
+        nest_count = nest_count / len(locs_list) * 100
+
+        centre_times.append(centre_count)
+        edge_times.append(edge_count)
+        exit_times.append(exit_count)
+        nest_times.append(nest_count)
+
+    centre_mean = np.nanmean(centre_times)
+    edge_mean = np.nanmean(edge_times)
+    exit_mean = np.nanmean(exit_times)
+    nest_mean = np.nanmean(nest_times)
+
+    return centre_mean, edge_mean, exit_mean, nest_mean
 
 def mice_that_enter_exit_roi(locs_list, exit_roi = [650, 240, 800, 500], min_escape_frames=5):
     exit_roi_mice = 0

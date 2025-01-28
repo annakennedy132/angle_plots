@@ -45,7 +45,7 @@ class FinalPlots:
     
     def plot_global_data(self):
 
-        wt_baseline_locs, blind_baseline_locs = data.extract_data(self.global_locs_file, nested=False, data_start=3, data_end=5400, process_coords=True, escape_col=None)
+        wt_baseline_locs, blind_baseline_locs = data.extract_data(self.global_locs_file, nested=False, data_start=3, data_end=None, process_coords=True, escape_col=None)
         all_wt_locs, all_blind_locs = data.extract_data(self.global_locs_file, nested=True, data_start=3, process_coords=True, escape_col=None)
         self.wt_baseline_angles, self.blind_baseline_angles = data.extract_data(self.global_angles_file, nested=False, data_start=3, data_end=5400, escape_col=None)
         self.wt_baseline_distances, self.blind_baseline_distances = data.extract_data(self.global_distances_file, nested=False, data_start=3, data_end=5400, escape_col=None)
@@ -53,8 +53,8 @@ class FinalPlots:
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
         self.figs.append(fig)
-        plots.plot_coords(fig, ax1, wt_baseline_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=700, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True, colorbar=False)
-        plots.plot_coords(fig, ax2, blind_baseline_locs, xlabel="x", ylabel="y", gridsize=50, vmin=0, vmax=700, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True)
+        plots.plot_coords(fig, ax1, wt_baseline_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=1000, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True, colorbar=False)
+        plots.plot_coords(fig, ax2, blind_baseline_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=1000, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
         self.figs.append(fig)
@@ -425,7 +425,7 @@ class FinalPlots:
                                     colors=['tab:blue', 'mediumblue', 'green', 'mediumseagreen'], 
                                     bar_width=0.35,
                                     log_y=True, 
-                                    show=False, 
+                                    show=True, 
                                     close=True)
 
     def plot_traj_data(self):
@@ -449,6 +449,32 @@ class FinalPlots:
         plots.time_plot(fig, ax3, norm_true_blind_locs, fps=30, xlim=x_limits, ylim=y_limits, show=False, close=True, colorbar=False)
         ax4.imshow(self.background_image, cmap='gray', extent=[*x_limits, *y_limits], aspect='auto', zorder=0)
         plots.time_plot(fig, ax4, norm_false_blind_locs, fps=30, xlim=x_limits, ylim=y_limits, show=False, close=True, colorbar=False)
+
+    def plot_time_vs_age(self):
+        
+        wt_true_time, wt_false_time, blind_true_time, blind_false_time = data.extract_data_rows(self.escape_stats_file, data_row=6, escape=True)
+        wt_true_age, wt_false_age, blind_true_age, blind_false_age = data.extract_data_rows(self.escape_stats_file, data_row=2, escape=True)
+
+        fig, ax = plt.subplots(figsize=(7,5))
+        self.figs.append(fig)
+        plots.plot_two_scatter_trendline(fig, ax,
+                                        wt_true_age, 
+                                        wt_true_time, 
+                                        blind_true_age, 
+                                        blind_true_time, 
+                                        "Age", 
+                                        "Time to Escape (s)",
+                                        "WT", 
+                                        f"{self.mouse_type}",
+                                        group1_color='tab:blue', 
+                                        group2_color='mediumseagreen', 
+                                        marker_size=20, 
+                                        show=False, 
+                                        close=False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.legend(loc='upper right', fontsize='small', frameon=False, bbox_to_anchor=(1.1, 1))
+        plt.show()
 
     def save_pdfs(self):
         if self.save_figs:

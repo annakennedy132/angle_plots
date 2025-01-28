@@ -6,7 +6,7 @@ def run():
 
     FOLDER = parse_args()
     #mouse_type = input("Input blind mouse type: ")
-    mouse_type="RD1"
+    mouse_type="rd1"
 
     fp = FinalPlots(FOLDER, mouse_type)
     fp.plot_global_data()
@@ -16,6 +16,7 @@ def run():
     fp.plot_traj_data()
     fp.plot_prev_tort()
     fp.plot_avgs_data()
+    fp.plot_time_vs_age()
     fp.save_pdfs()
 
 def parse_args():

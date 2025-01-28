@@ -128,6 +128,8 @@ def plot_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=N
     
     fig.set_constrained_layout(True)
 
+    coords = [coord for coord in coords if isinstance(coord, tuple) and len(coord) == 2 and not np.isnan(coord[0]) and not np.isnan(coord[1])]
+
     # Extract x and y values
     x_values = [coord[0] for coord in coords]
     y_values = [coord[1] for coord in coords]
