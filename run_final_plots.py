@@ -9,14 +9,16 @@ def run():
     mouse_type="rd1"
 
     fp = FinalPlots(FOLDER, mouse_type)
-    fp.plot_global_data()
-    fp.plot_event_data()
-    fp.plot_stats_data()
-    fp.plot_tort_data()
-    fp.plot_traj_data()
-    fp.plot_prev_tort()
+    fp.plot_coord_data()
+    fp.plot_angle_data()
     fp.plot_avgs_data()
-    fp.plot_time_vs_age()
+    fp.plot_stats_data()
+    fp.plot_traj_data()
+    fp.plot_tort_data()
+    fp.plot_behavior()
+    fp.plot_speed_data()
+    fp.plot_arena_coverage_data()
+    fp.plot_location_data()
     fp.save_pdfs()
 
 def parse_args():

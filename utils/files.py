@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import csv
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pyplot as plt
 
 def load_config():
     
@@ -119,3 +120,12 @@ def save_report(figs, base_path, title=None):
     with PdfPages(report_path) as pdf:
         for fig in figs:
             pdf.savefig(fig)
+            
+def save_images(imgs, base_path, title=None):
+    for i, fig in enumerate(imgs):
+        if title:
+            report_path = f"{base_path}_{title}_figure_{i + 1}.png"
+        else:
+            report_path = f"{base_path}_figure_{i + 1}.png"
+        
+        fig.savefig(report_path, format="png")

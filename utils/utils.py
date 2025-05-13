@@ -118,21 +118,16 @@ def analyse_locs(all_locs, fps, centre_roi):
                     edge_count += 1
             elif np.isnan(loc).any():
                 continue
-                
-        # Convert frame counts to time in seconds
+
         centre_times.append(centre_count / fps)
         edge_times.append(edge_count / fps)
 
-    centre_mean = np.nanmean(centre_times)
-    centre_std = np.nanstd(centre_times)
-    edge_mean = np.nanmean(edge_times)
-    edge_std = np.nanstd(edge_times)
-
-    return centre_mean, centre_std, edge_mean, edge_std
+    return centre_times, edge_times
 
 def categorise_location(locs):
     exit_roi = [650, 500, 800, 240]
     centre_roi = [200, 570, 670, 170]
+    fps = 30
 
     centre_times = []
     edge_times = []
@@ -156,23 +151,13 @@ def categorise_location(locs):
                     edge_count += 1
             else:
                 nest_count += 1
-    
-        centre_count = centre_count / len(locs_list) * 100
-        edge_count = edge_count / len(locs_list) * 100
-        exit_count = exit_count / len(locs_list) * 100
-        nest_count = nest_count / len(locs_list) * 100
 
-        centre_times.append(centre_count)
-        edge_times.append(edge_count)
-        exit_times.append(exit_count)
-        nest_times.append(nest_count)
+        centre_times.append(centre_count / fps)
+        edge_times.append(edge_count / fps)
+        exit_times.append(exit_count / fps)
+        nest_times.append(centre_count / fps)
 
-    centre_mean = np.nanmean(centre_times)
-    edge_mean = np.nanmean(edge_times)
-    exit_mean = np.nanmean(exit_times)
-    nest_mean = np.nanmean(nest_times)
-
-    return centre_mean, edge_mean, exit_mean, nest_mean
+    return centre_times, edge_times, exit_times, nest_times
 
 def mice_that_enter_exit_roi(locs_list, exit_roi = [650, 240, 800, 500], min_escape_frames=5):
     exit_roi_mice = 0

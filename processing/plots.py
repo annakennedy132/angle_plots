@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import seaborn as sns
 from utils import parse
 
@@ -41,47 +40,7 @@ def two_plots(fig, ax1, x, data1, data2, data1_colour, x_label, data1_label, dat
     if show: plt.show()
     if close: plt.close()
 
-def plot_two_lines(fig, ax, data1, data2, label1, label2, color1, color2, xlabel='X', ylabel='Y', title='Line Plot', ylim=None, show=False, close=True):
-    x = np.arange(len(data1))
-    ax.plot(x, data1, color=color1, label=label1)
-    ax.plot(x, data2, color=color2, label=label2)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.legend()
-    ax.grid(True)
-    if ylim is not None:
-        ax.set_ylim(ylim)
-
-    if show:
-        plt.show()
-    if close:
-        plt.close()
-
-    return fig, ax
-
-def plot_one_line(fig, ax, data1, label1, color1, xlabel='X', ylabel='Y', title='Line Plot', xlim=None, ylim=None, show=False, close=True):
-    x = np.arange(len(data1))
-    ax.plot(x, data1, color=color1, label=label1)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.legend()
-    ax.grid(True)
-    if xlim is not None:
-        ax.set_xlim(xlim)
-    if ylim is not None:
-        ax.set_ylim(ylim)
-
-    if show:
-        plt.show()
-    if close:
-        plt.close()
-
-    return fig, ax
-
 def plot_polar_chart(fig, ax, angles, bins, direction=-1, zero="E", show=False, close=True):
-    # Filter and convert angles to float, ignoring non-numeric values
     valid_angles = []
     for angle in angles:
         try:
@@ -109,7 +68,7 @@ def plot_polar_chart(fig, ax, angles, bins, direction=-1, zero="E", show=False, 
     for bar, height in zip(bars, hist_norm):
         bar.set_facecolor(plt.cm.viridis(height))
 
-    ax.set_xticks(np.linspace(0, 2 * np.pi, 8, endpoint=False))  # 8 ticks evenly spaced, excluding the endpoint
+    ax.set_xticks(np.linspace(0, 2 * np.pi, 8, endpoint=False))
     labels = ['0°', '45°', '90°', '135°', '180°', '-135°', '-90°', '-45°']
     ax.set_xticklabels(labels)
         
@@ -124,17 +83,14 @@ def plot_polar_chart(fig, ax, angles, bins, direction=-1, zero="E", show=False, 
 
     return fig, ax
 
-def plot_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, show_coord=None, show=True, close=False, show_axes='none', colorbar=True):
+def plot_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, show=True, close=False, colorbar=True):
     
     fig.set_constrained_layout(True)
 
     coords = [coord for coord in coords if isinstance(coord, tuple) and len(coord) == 2 and not np.isnan(coord[0]) and not np.isnan(coord[1])]
-
-    # Extract x and y values
     x_values = [coord[0] for coord in coords]
     y_values = [coord[1] for coord in coords]
 
-    # Plot coordinates
     hb = ax.hexbin(x_values, y_values, gridsize=gridsize, cmap='inferno', vmin=vmin, vmax=vmax, extent=[xmin, xmax, ymin, ymax], mincnt=0)
     if xlabel: ax.set_xlabel(xlabel)
     if ylabel: ax.set_ylabel(ylabel)
@@ -145,27 +101,12 @@ def plot_coords(fig, ax, coords, xlabel=None, ylabel=None, gridsize=None, vmin=N
         cb = fig.colorbar(hb, ax=ax)
         cb.set_label('Frequency')
 
-    if show_coord:
-        ax.scatter(show_coord[0], show_coord[1], color='red', marker="x")
-
-    # Customize axes visibility
-    if show_axes == 'both':
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-    elif show_axes == 'none':
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
     if show: plt.show()
     if close: plt.close(fig)
 
     return fig
 
-def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700, 50), show=False, close=True, show_axes='none', colorbar=True):
+def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700, 50), show=False, close=True, colorbar=True):
 
     total_time = len(coordinates[0]) / fps
     colors = np.linspace(0, total_time, len(coordinates[0]))
@@ -174,10 +115,8 @@ def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700, 50), show=Fals
         # Extract x and y coordinates
         x_coords = [coord[0] for coord in coords]
         y_coords = [coord[1] for coord in coords]
-
         # Filter out NaN values
         valid_indices = [i for i, (x, y) in enumerate(zip(x_coords, y_coords)) if not (np.isnan(x) or np.isnan(y))]
-        
         # Use the valid indices to filter x and y coordinates
         filtered_x_coords = [x_coords[i] for i in valid_indices]
         filtered_y_coords = [y_coords[i] for i in valid_indices]
@@ -196,224 +135,184 @@ def time_plot(fig, ax, coordinates, fps=30, xlim=None, ylim=(700, 50), show=Fals
         ax.set_xlim(xlim)
     if ylim is not None:
         ax.set_ylim(ylim)
-
-    # Customize axes visibility
-    if show_axes == 'both':
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-    elif show_axes == 'none':
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
-    if show:
-        plt.show()
-    
-    if close:
-        plt.close()
-
-    return fig
-
-def plot_two_scatter_trendline(fig, ax, data1_x, data1_y, data2_x, data2_y, x_label, y_label, group1_label, group2_label, 
-                           group1_color='blue', group2_color='green', marker_size=20, show=False, close=True, title=None, show_axes='both'):
-    sns.regplot(x=data1_x, y=data1_y, ax=ax, scatter=True, label=group1_label,
-                scatter_kws={'color': group1_color, 'alpha': 0.7, 's': marker_size},line_kws={'color': group1_color}, ci=None)
-    
-    sns.regplot(x=data2_x, y=data2_y, ax=ax, scatter=True, label=group2_label,
-                scatter_kws={'color': group2_color, 'alpha': 0.7, 's': marker_size},line_kws={'color': group2_color}, ci=None)
-    
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-
-    # Customize axes visibility
-    if show_axes == 'both':
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-    elif show_axes == 'none':
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-    
-    ax.legend()
-
-    if show: 
-        plt.show()
-    if close: 
-        plt.close()
-
-    return fig
-
-def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, bar1_label, bar2_label,
-                        color1='blue', color2='green', ylim=None, bar_width=0.2, points=True, 
-                        log_y=False, error_bars=False, show=False, close=True, title=None, show_axes='both'):
-    
-    x = np.array([0, bar_width*2])
-    
-    mean1 = np.nanmean(data1)
-    mean2 = np.nanmean(data2)
-    
-    std1 = np.nanstd(data1) if error_bars else None
-    std2 = np.nanstd(data2) if error_bars else None
-
-    if error_bars:
-        ax.bar(x[0], mean1, yerr=std1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=2, capsize=5)
-        ax.bar(x[1], mean2, yerr=std2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=2, capsize=5)
-    else:
-        ax.bar(x[0], mean1, label=bar1_label, color=color1, alpha=0.6, width=bar_width, zorder=1)
-        ax.bar(x[1], mean2, label=bar2_label, color=color2, alpha=0.6, width=bar_width, zorder=1)
-
-    # Plot bar outlines with opaque edges
-    ax.bar(x[0], mean1, color='none', edgecolor=color1, linewidth=2, alpha=1, width=bar_width, zorder=2)
-    ax.bar(x[1], mean2, color='none', edgecolor=color2, linewidth=2, alpha=1, width=bar_width, zorder=2)
-    
-    for i, data in enumerate([data1, data2]):
-        bar = x[i]
-        color = color1 if i == 0 else color2
-        if points:
-            for value in data:
-                if not np.isnan(value):
-                    ax.scatter(bar, value, color=color, marker='o', s=20, zorder=3)
-
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.set_title(title)
-    ax.set_xticks(x)
-    ax.set_xticklabels([bar1_label, bar2_label])
-
-    # Customize axes visibility
-    if show_axes == 'both':
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-    elif show_axes == 'none':
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
-    if ylim is not None:
-        ax.set_ylim(ylim)
-    
-    if log_y:
-        ax.set_yscale('log')
-
-    fig.tight_layout()
-
-    if show:
-        plt.show()
-    if close:
-        plt.close()
-
-    return fig
-
-def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, labels, xlabel, ylabel, colors, bar_width=0.35, log_y=False, show=False, close=True, title=None, show_axes='both'):
-
-    x = np.arange(len(labels))
-    bar_positions = np.arange(len(labels))
-    
-    datasets = [data1, data2, data3, data4]
-
-    for bar_position, data, color, label in zip(bar_positions, datasets, colors, labels):
-        ax.bar(bar_position, np.nanmean(data), width=bar_width, color=color, alpha=0.6, edgecolor=color, linewidth=2, label=label, zorder=1)
-        ax.bar(bar_position, np.nanmean(data), width=bar_width, color='none', alpha=0.8, edgecolor=color, linewidth=2, label=label, zorder=1)
         
-        for value in data:
-            if not np.isnan(value):
-                ax.scatter(bar_position, value, color=color, marker='o', s=2, zorder=2)
-
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-
-    if log_y:
-        ax.set_yscale('log')
-
-    # Customize axes visibility
-    if show_axes == 'both':
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-    elif show_axes == 'none':
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
 
     if show:
         plt.show()
+    
     if close:
         plt.close()
 
-    return fig, ax
+    return fig
 
-def scatter_plot_with_stats(fig, ax,coords, point_color='darkgrey', background_color='black', mean_marker='o', x_limits=None, y_limits=None, show=False, close=True, show_axes='none'):
-    """
-    Plots a scatter plot with given coordinates, mean, and standard deviation lines.
+def cmap_plot(fig, axes, data1, data2, sort_data1, sort_data2, title1, title2, ylabel, ylim, cmap="viridis", fps=30, vmin=100, vmax=600, cbar_dim=[0.93, 0.11, 0.015, 0.53]):
     
-    Parameters:
-    - coords: List of tuples (x, y) representing coordinates.
-    - point_color: Color of the scatter points.
-    - background_color: Color of the plot background.
-    - mean_marker: Marker style for the mean point.
-    """
+    wt_avg_data = [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in data1]) for i in range(max(map(len, data1)))]
+    blind_avg_data = [np.nanmean([lst[i] if i < len(lst) else np.nan for lst in data2]) for i in range(max(map(len, data2)))]
+        
+    num_frames = len(wt_avg_data)  #Get number of frames from speed data
+    frame_time = (1. / fps)
+    x_ticks = np.linspace(0, num_frames, 4).astype(int)  # Adjust number of ticks as needed
+    x_labels = (x_ticks * frame_time) - 5
+    
+    # Plot average speeds above the heatmaps
+    axes[0, 0].plot(wt_avg_data, color='red')
+    axes[0, 0].set_title(title1)
+    axes[0, 0].set_ylabel(ylabel)
+    axes[0, 0].set_ylim(ylim)
+    axes[0, 0].spines['left'].set_visible(False)
+    axes[0, 0].spines['right'].set_visible(False)
+    axes[0, 0].spines['top'].set_visible(False)
+    axes[0, 0].spines['bottom'].set_visible(False)
+    axes[0, 0].get_xaxis().set_visible(False)
 
-    # Parse string coordinates to tuples of floats
-    coords = [parse.parse_coord(coord) for coord in coords]
+    axes[0, 1].plot(blind_avg_data, color='red')
+    axes[0, 1].set_title(title2)
+    axes[0, 1].set_ylim(ylim)
+    axes[0, 1].spines['left'].set_visible(False)
+    axes[0, 1].spines['right'].set_visible(False)
+    axes[0, 1].spines['top'].set_visible(False)
+    axes[0, 1].spines['bottom'].set_visible(False)
+    axes[0, 1].get_xaxis().set_visible(False)
+
+    #sort and separate speed by age
+    wt_sorted_data = [data for _, data in sorted(zip(sort_data1, data1))]
+    blind_sorted_data = [data for _, data in sorted(zip(sort_data2, data2))]
+
+    # Plot the heatmaps below the average speeds
+    sns.heatmap(wt_sorted_data, ax=axes[1, 0], cmap=cmap, cbar=False, vmin=vmin, vmax=vmax)
+    axes[1, 0].set_ylabel('Trial')
+    axes[1, 0].axvline(150, color='black', linewidth=2)  # Stimulus start
+    axes[1, 0].set_yticks([])
+    axes[1, 0].set_xticks(x_ticks)
+    axes[1, 0].set_xticklabels(x_labels)
+
+    sns.heatmap(blind_sorted_data, ax=axes[1, 1], cmap=cmap, cbar=False, vmin=vmin, vmax=vmax)
+    axes[1, 1].set_ylabel('Trial')
+    axes[1, 1].axvline(150, color='black', linewidth=2)
+    axes[1, 1].set_yticks([])
+    axes[1, 1].set_xticks(x_ticks)
+    axes[1, 1].set_xticklabels(x_labels)
+
+    norm = plt.Normalize(vmin=vmin, vmax=vmax)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    cbar_ax = fig.add_axes(cbar_dim)
+    cbar = fig.colorbar(sm, cax=cbar_ax)
+    cbar.set_label('Speed (pps)', rotation=270, labelpad=10)
+    cbar.outline.set_visible(False) 
+    
+    return fig, axes 
+
+def scatter_plot_with_stats(fig, ax,coords, point_color='darkgrey', mean_marker='o', x_limits=None, y_limits=None, show=False, close=True):
+
+    coords = [parse.parse_coord(coord) for coord in coords]# Parse string coordinates to tuples of floats
     coords = [coord for coord in coords if coord is not np.nan]
-
-    # Extract x and y coordinates
-    x_coords = [coord[0] for coord in coords]
+    x_coords = [coord[0] for coord in coords] # Extract x and y coordinates
     y_coords = [coord[1] for coord in coords]
-    
-    # Calculate mean and standard deviation
-    mean_x = np.nanmean(x_coords)
+    mean_x = np.nanmean(x_coords) # Calculate mean and standard deviation
     mean_y = np.nanmean(y_coords)
     std_x = np.nanstd(x_coords)
     std_y = np.nanstd(y_coords)
     
-    ax.scatter(x_coords, y_coords, color=point_color, s=20)
-    
-    # Plot standard deviation lines
+    ax.scatter(x_coords, y_coords, color=point_color, s=10)
     ax.plot([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='black')
     ax.plot([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='black')
-    
-    # Add '|' markers at the ends of the standard deviation lines
     ax.scatter([mean_x - std_x, mean_x + std_x], [mean_y, mean_y], color='black', marker='|', s=100)
     ax.scatter([mean_x, mean_x], [mean_y - std_y, mean_y + std_y], color='black', marker='_', s=100)
-
-    # Plot mean point
-    ax.scatter(mean_x, mean_y, color='red', s=50, marker=mean_marker, zorder=3)
-    
-    # Set background color
-    ax.set_facecolor(background_color)
+    ax.scatter(mean_x, mean_y, color='black', s=50, marker=mean_marker, zorder=3)
 
     if x_limits:
         ax.set_xlim(x_limits)
     if y_limits:
         ax.set_ylim(y_limits)
+    
+    if show:
+        plt.show()
+    if close:
+        plt.close()
+    
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
 
-    # Customize axes visibility
-    if show_axes == 'both':
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-    elif show_axes == 'none':
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
+    return fig, ax
+
+def plot_bar_two_groups(fig, ax, data1, data2, x_label, y_label, bar1_label, bar2_label,
+                        color1, color2, ylim=None, bar_width=0.2, points=True, 
+                        log_y=False, error_bars=False, show=False, close=True, title=None):
+    
+    mean1 = np.nanmean(data1)
+    mean2 = np.nanmean(data2)
+    std1 = np.nanstd(data1)
+    std2 = np.nanstd(data2)
+    
+    x = [0.2, 0.5]
+    ax.margins(x=0.1)
+    ax.bar(x[0], mean1, bar_width, color=color1,yerr=std1 if error_bars else None, error_kw=dict(ecolor=color1, capsize=5))
+    ax.bar(x[1], mean2, bar_width, color=color2, yerr=std2 if error_bars else None, error_kw=dict(ecolor=color2, capsize=5))
+    
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    ax.set_xticks([x[0],x[1]])
+    ax.set_xticklabels([bar1_label, bar2_label])
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    if log_y:
+        ax.set_yscale('log')
+    if points:
+        ax.scatter(np.full_like(data1, x[0]), data1, color=color1, s=10)
+        ax.scatter(np.full_like(data2, x[1]), data2, color=color2, s=10)
+        
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    if show:
+        plt.show()
+    if close:
+        plt.close()
+
+    return fig
+
+def plot_bar_four_groups(fig, ax, data1, data2, data3, data4, xticks, labels, colors, bar_width=0.2, error_bars=False, points=False, log_y=False, ylim=(0,None), show=False, close=True):
+    
+    mean1 = np.nanmean(data1)
+    mean2 = np.nanmean(data2)
+    mean3 = np.nanmean(data3)
+    mean4 = np.nanmean(data4)
+    std1 = np.nanstd(data1)
+    std2 = np.nanstd(data2)
+    std3 = np.nanstd(data3)
+    std4 = np.nanstd(data4)
+    
+    x = [0.2, 0.5, 0.8, 1.1]
+    ax.margins(x=0.1)
+    ax.bar(x[0], mean1, bar_width, color=colors[0],yerr=std1 if error_bars else None, error_kw=dict(ecolor=colors[0], capsize=5))
+    ax.bar(x[1], mean2, bar_width, color=colors[1], yerr=std2 if error_bars else None, error_kw=dict(ecolor=colors[1], capsize=5))
+    ax.bar(x[2], mean3, bar_width, color=colors[2],yerr=std3 if error_bars else None, error_kw=dict(ecolor=colors[2], capsize=5))
+    ax.bar(x[3], mean4, bar_width, color=colors[3], yerr=std4 if error_bars else None, error_kw=dict(ecolor=colors[3], capsize=5))
+        
+    ax.set_xticks(x)
+    ax.set_xticklabels(xticks)
+    ax.legend(labels, loc='best')
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    if log_y:
+        ax.set_yscale("log")
+    if points:
+        ax.scatter(np.full_like(data1, x[0]), data1, color=colors[0], s=10)
+        ax.scatter(np.full_like(data2, x[1]), data2, color=colors[1], s=10)
+        ax.scatter(np.full_like(data3, x[2]), data3, color=colors[2], s=10)
+        ax.scatter(np.full_like(data4, x[3]), data4, color=colors[3], s=10)
+                
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
     
     if show:
         plt.show()
@@ -421,33 +320,45 @@ def scatter_plot_with_stats(fig, ax,coords, point_color='darkgrey', background_c
         plt.close()
 
     return fig, ax
-
-def plot_scatter_trendline(fig, ax, data1_x, data1_y, x_label, y_label, title=None, color='blue', marker_size=20, show=False, close=True, show_axes='both'):
-
-    sns.regplot(x=data1_x, y=data1_y, ax=ax, scatter=True,
-                scatter_kws={'color': color, 'alpha': 0.7, 's': marker_size}, 
-                line_kws={'color': color}, ci=None)
     
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-
-    # Customize axes visibility
-    if show_axes == 'both':
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-    elif show_axes == 'none':
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
-    if show: 
+def plot_grouped_bar_chart(fig, ax, data1, data2, data3, data4, xticks, labels, colors, bar_width=0.2, error_bars=False, points=False, log_y=False, ylim=(0,None), show=False, close=True):
+    x = [0.2, 0.5]
+    mean1 = np.nanmean(data1)
+    mean2 = np.nanmean(data2)
+    mean3 = np.nanmean(data3)
+    mean4 = np.nanmean(data4)
+     
+    std1 = np.nanstd(data1)
+    std2 = np.nanstd(data2)
+    std3 = np.nanstd(data3)
+    std4 = np.nanstd(data4)
+    
+    ax.margins(x=0.1)
+    ax.bar((x[0] - bar_width/2), mean1, bar_width, color=colors[0],yerr=std1 if error_bars else None, error_kw=dict(ecolor=colors[0], capsize=5))
+    ax.bar((x[0]+ bar_width/2), mean2, bar_width, color=colors[1], yerr=std2 if error_bars else None, error_kw=dict(ecolor=colors[1], capsize=5))
+    ax.bar((x[1] - bar_width/2), mean3, bar_width, color=colors[2], yerr=std3 if error_bars else None, error_kw=dict(ecolor=colors[2], capsize=5))
+    ax.bar((x[1] + bar_width/2), mean4, bar_width, color=colors[3], yerr=std4 if error_bars else None, error_kw=dict(ecolor=colors[3], capsize=5))
+    
+    if points:
+        ax.scatter(np.full_like(data1, x[0] - bar_width/2), data1, color=colors[0], s=10)
+        ax.scatter(np.full_like(data2, x[0] + bar_width/2), data2, color=colors[0], s=10)
+        ax.scatter(np.full_like(data3, x[1] - bar_width/2), data3, color=colors[1], s=10)
+        ax.scatter(np.full_like(data4, x[1] + bar_width/2), data4, color=colors[1], s=10)
+    
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    ax.set_xticks(x)
+    ax.set_xticklabels(xticks)
+    ax.legend(labels, loc='best')
+    if log_y:
+        ax.set_yscale("log")
+        
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    
+    if show:
         plt.show()
-    if close: 
+    if close:
         plt.close()
 
-    return fig
-
+    return fig, ax
