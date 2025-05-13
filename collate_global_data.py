@@ -2,8 +2,8 @@ import sys
 import os
 from rich.progress import track
 
-from processing import collation
-from utils import files, parse
+from angle_plots.processing import collation
+from angle_plots.utils import files, parse
 
 def run():
     FOLDER, INDEX_FILE = parse_args()

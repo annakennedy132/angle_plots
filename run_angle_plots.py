@@ -1,6 +1,6 @@
 import sys
-from utils import files, parse
-from classes.angle_plots import AnglePlots
+from angle_plots.utils import files, parse
+from angle_plots import AnglePlots, config
 
 def run():
 
@@ -8,12 +8,18 @@ def run():
     STIM_FILE = files.load_stim_file(TRACKING_FILE)
     VIDEO_FILE = files.load_video_file(TRACKING_FILE)
 
-    ap = AnglePlots(TRACKING_FILE)
+    ap = AnglePlots(TRACKING_FILE, config)
+    
     ap.process_data(STIM_FILE, VIDEO_FILE)
     ap.load_stim_file(STIM_FILE)
-    ap.draw_global_plots()
+    
+    ap.load_background_image(config["tracking"]["background_image"])
+    ap.increase_fig_size()
+    
+    ap.draw_global_traces()
     ap.draw_event_plots()
-    ap.save_angles()
+    
+    ap.save_data()
     ap.save_pdf_report()
 
 def parse_args():

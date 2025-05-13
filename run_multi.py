@@ -2,8 +2,8 @@ import sys
 import os
 from rich.progress import track
 
-from utils import files, parse
-from classes.angle_plots import AnglePlots
+from angle_plots.utils import files, parse
+from angle_plots import AnglePlots
 
 
 def run():
@@ -51,7 +51,7 @@ def parse_args():
         
         folder = parse.folder(sys.argv[1])
         index_file = parse.text_file(sys.argv[2])      
-             
+            
     else:
         
         raise KeyError("Too many input arguments")

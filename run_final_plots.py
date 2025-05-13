@@ -1,6 +1,6 @@
 import sys
-from utils import parse
-from classes.final_plots import FinalPlots
+from angle_plots.utils import parse
+from angle_plots import FinalPlots, config
 
 def run():
 
@@ -8,17 +8,19 @@ def run():
     #mouse_type = input("Input blind mouse type: ")
     mouse_type="rd1"
 
-    fp = FinalPlots(FOLDER, mouse_type)
-    fp.plot_coord_data()
-    fp.plot_angle_data()
-    fp.plot_avgs_data()
-    fp.plot_stats_data()
-    fp.plot_traj_data()
-    fp.plot_tort_data()
-    fp.plot_behavior()
-    fp.plot_speed_data()
-    fp.plot_arena_coverage_data()
-    fp.plot_location_data()
+    fp = FinalPlots(FOLDER, config, mouse_type)
+    #fp.plot_coord_data()
+    #fp.plot_angle_data()
+    #fp.plot_avgs_data()
+    #fp.plot_stats_data()
+    #fp.plot_traj_data()
+    #fp.plot_tort_data()
+    #fp.plot_behavior()
+    #fp.plot_speed_data()
+    #fp.plot_arena_coverage_data()
+    #fp.plot_location_data()
+    #fp.plot_distance_from_wall()
+    fp.plot_path_similarity()
     fp.save_pdfs()
 
 def parse_args():
