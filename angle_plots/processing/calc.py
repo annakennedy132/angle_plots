@@ -100,6 +100,6 @@ def compute_nearest_euclidean_similarity(before_locs_list, stim_locs_list):
                 tree = cKDTree(stim_locs)
                 distances, _ = tree.query(before_locs, k=1)
                 avg_distance = np.mean(distances)
-                similarity = 1 / (1 + avg_distance)
+                similarity = (1 / (1 + avg_distance))
                 scores.append(similarity)
             return scores

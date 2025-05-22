@@ -1,5 +1,5 @@
 import numpy as np
-import calc
+from angle_plots.processing import calc
 
 def categorise_behavior(total_angle_change, total_distance):
     # Thresholds for behavior categorization based on total distance and total angle change
@@ -69,10 +69,10 @@ def compute_mean_behavior(all_angles, all_distances):
 
         return mean_behavior_counts
 
-def analyse_locs(all_locs, fps, centre_roi):
+def analyse_locs(all_locs, fps, centre_roi, total_frames=5400):
     centre_times = []
     edge_times = []
-    
+
     for locs_list in all_locs:
         centre_count = 0
         edge_count = 0
@@ -84,6 +84,9 @@ def analyse_locs(all_locs, fps, centre_roi):
                     edge_count += 1
             elif np.isnan(loc).any():
                 continue
+        
+        centre_count = (centre_count / total_frames) * 100
+        edge_count = (edge_count / total_frames) * 100
 
         centre_times.append(centre_count / fps)
         edge_times.append(edge_count / fps)

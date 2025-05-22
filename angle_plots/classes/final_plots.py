@@ -1,9 +1,11 @@
 import os
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from scipy.interpolate import interp1d
 
-from angle_plots.processing import coordinates, extract, plots, stats, calc
+from angle_plots.processing import coordinates, extract, plots, stats, calc, behaviour
 from angle_plots.utils import files
 
 import seaborn as sns
@@ -17,7 +19,7 @@ class FinalPlots:
             
         for k, v in settings["tracking"].items():
             setattr(self, k, v)
-
+            
         self.mouse_type = mouse_type
 
         self.folder = folder
@@ -52,15 +54,31 @@ class FinalPlots:
         event_wt_locs, event_blind_locs = extract.extract_data(self.event_locs_file, nested=False, data_start=154, escape=False, process_coords=True, escape_col=None)
 
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
-        self.figs.append(fig)
-        plots.plot_coords(fig, ax1, wt_baseline_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=5, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True, colorbar=False)
+        self.imgs.append(fig)
+        plots.plot_coords(fig, ax1, wt_baseline_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=10, xmin=80, xmax=790, ymin=700, ymax=80, show=False, close=True, colorbar=False)
         ax1.set_title(("WT - baseline"))
-        plots.plot_coords(fig, ax2, blind_baseline_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=5, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True)
+        plots.plot_coords(fig, ax2, blind_baseline_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=10, xmin=80, xmax=790, ymin=700, ymax=80, show=False, close=True)
         ax2.set_title((f"{self.mouse_type} - baseline"))
-        plots.plot_coords(fig, ax3, event_wt_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=5, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True, colorbar=False)
+        plots.plot_coords(fig, ax3, event_wt_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=10, xmin=80, xmax=790, ymin=700, ymax=80, show=False, close=True, colorbar=False)
         ax3.set_title(("WT - events"))
-        plots.plot_coords(fig, ax4, event_blind_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=5, xmin=90, xmax=790, ymin=670, ymax=80, show=False, close=True)
+        plots.plot_coords(fig, ax4, event_blind_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=10, xmin=80, xmax=790, ymin=700, ymax=80, show=False, close=True)
         ax4.set_title((f"{self.mouse_type} - events"))
+        
+        fig, ((ax1, ax2)) = plt.subplots(1, 2, figsize=(14, 5))
+        self.imgs.append(fig)
+        fig.suptitle(f"Heatmap of Coordinates at Baseline")
+        plots.plot_coords(fig, ax1, wt_baseline_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=10, xmin=80, xmax=790, ymin=700, ymax=80, show=False, close=True, colorbar=False)
+        ax1.set_title(("WT"))
+        plots.plot_coords(fig, ax2, blind_baseline_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=10, xmin=80, xmax=790, ymin=700, ymax=80, show=False, close=True)
+        ax2.set_title((f"{self.mouse_type}"))
+        
+        fig, ((ax1, ax2)) = plt.subplots(1, 2, figsize=(14, 5))
+        self.imgs.append(fig)
+        fig.suptitle(f"Heatmap of Coordinates During Events")
+        plots.plot_coords(fig, ax1, event_wt_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=10, xmin=80, xmax=790, ymin=700, ymax=80, show=False, close=True, colorbar=False)
+        ax1.set_title(("WT"))
+        plots.plot_coords(fig, ax2, event_blind_locs, xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=10, xmin=80, xmax=790, ymin=700, ymax=80, show=False, close=True)
+        ax2.set_title((f"{self.mouse_type}"))
 
     def plot_angle_data(self):
         wt_baseline_angles, blind_baseline_angles = extract.extract_data(self.global_angles_file, nested=False, data_start=3, data_end=5400, escape_col=None)
@@ -86,7 +104,7 @@ class FinalPlots:
     def plot_avgs_data(self):
 
         frame_time = (1./self.fps)
-        norm_event_time = np.arange(-self.t_minus, (self.length + self.t_plus), frame_time)
+        norm_event_time = np.arange(-self.event["t_minus"], (self.event["length"] + self.event["t_plus"]), frame_time)
 
         wt_speeds, blind_speeds = extract.extract_data(self.event_speeds_file, data_start=4, data_end=None)
         wt_angles, blind_angles = extract.extract_data(self.event_angles_file, data_start=4, data_end=None)
@@ -162,7 +180,7 @@ class FinalPlots:
 
         titles = ["Facing angle", "Distance from Exit (cm)", "Speed"]
         colours = ["blue", "green", "red"]
-        data_limits = [(-185, 20), (0, 55), (0,255)]
+        data_limits = [(-185, 20), (0, 55), (0,300)]
         
         for df, title, colour, limits in zip([avg_esc_angle_data, avg_esc_dist_data, avg_esc_speeds_data], titles, colours, data_limits):
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -193,6 +211,37 @@ class FinalPlots:
             ax2.spines['right'].set_visible(False)
             ax2.spines['top'].set_visible(False)
             ax2.legend()
+            
+        ##FOR POSTER
+        fig, (ax1, ax2) = plt.subplots(2,1, figsize=(5,8))
+            
+        fig.suptitle(f"Average Speed at Stimulus Event")
+        self.imgs.append(fig)
+            
+        ax1.set_xlabel("Time (seconds)")
+        ax1.set_ylabel("Speed (pps)")
+        ax1.set_title("WT")
+        ax1.set_ylim(limits)
+        ax1.plot(norm_event_time, df[0], color=colour, label="escape")
+        ax1.plot(norm_event_time, df[1], color=colour, alpha=0.5, label="no escape")
+        ax1.tick_params(axis='y')
+        ax1.axvspan(0,10, alpha=0.3, color='lightgray')
+        ax1.spines['right'].set_visible(False)
+        ax1.spines['top'].set_visible(False)
+        ax1.legend()
+        
+        ax2.set_xlabel("Time (seconds)")
+        ax2.set_ylabel("Speed (pps)")
+        ax2.set_title(f"{self.mouse_type}")
+        ax2.set_ylim(limits)
+        ax2.plot(norm_event_time, df[2], color=colour, label="escape")
+        ax2.plot(norm_event_time, df[3], color=colour, alpha=0.5, label="no escape")
+        ax2.tick_params(axis='y')
+        ax2.axvspan(0,10, alpha=0.3, color='lightgray')
+        ax2.spines['right'].set_visible(False)
+        ax2.spines['top'].set_visible(False)
+        ax2.legend()
+        plt.tight_layout()
             
     def plot_stats_data(self):
         wt_time, blind_time = extract.extract_data_rows(self.escape_stats_file, data_row=6)
@@ -301,6 +350,7 @@ class FinalPlots:
 
         fig, ax = plt.subplots(figsize=(4,4))
         self.figs.append(fig)
+        
         plots.plot_bar_two_groups(fig, ax, wt_times_to_find_nest, blind_times_to_find_nest, x_label="mouse type",
                                    y_label="time to find escape (s)", bar1_label="wt", bar2_label="rd1",
                         color1='blue', color2='green', ylim=None, bar_width=0.2, points=True, 
@@ -313,6 +363,42 @@ class FinalPlots:
                                   bar1_label="WT", bar2_label=f"{self.mouse_type}", color1="blue", color2="mediumseagreen", ylim=None, bar_width=0.2, points=True, 
                                 log_y=False, error_bars=False, show=False, close=True, title=None)
         ax.set_title("Percentage of Mice \n that Never Escape")
+        
+        ##FOR POSTER
+        fig, ax = plt.subplots(figsize=(5,4.5))
+        self.imgs.append(fig)
+        fig.suptitle("Percentage of Successful Escapes per Mouse")
+        plots.plot_bar_two_groups(fig, ax, wt_esc_avg, blind_esc_avg, "Mouse Type", "Escape probability (%)", "WT", f"{self.mouse_type}",
+                                  color1='#238a8dff', color2='gainsboro', ylim=(0,102), bar_width=0.1, points=True, error_bars=False, show=False, close=True)
+        plt.tight_layout()
+        
+        fig, ax = plt.subplots(figsize=(4,4.5))
+        self.imgs.append(fig)
+        fig.suptitle("Time to Find Escape")
+        plots.plot_bar_two_groups(fig, ax, wt_time, blind_time, "Mouse Type", "Time (s)", "WT", f"{self.mouse_type}", 
+                                color1='#238a8dff', color2='gainsboro', ylim=None, bar_width=0.1, points=False, error_bars=True, show=False, close=True)
+        plt.tight_layout()
+        
+        fig, ax = plt.subplots(figsize=(4,4))
+        fig.suptitle("Time Since Last Visiting the Nest")
+        ax.set_xlabel("Mouse Type")
+        ax.set_ylabel("Time (s)")
+        self.imgs.append(fig)
+        plots.plot_grouped_bar_chart(fig, ax, wt_true_data, wt_false_data, blind_true_data, blind_false_data, 
+                                     xticks=["WT", f"{self.mouse_type}"], labels=["escape", "no escape", "escape", "no escape"],
+                                     colors=["teal", "cadetblue", "darkgray", "lightgray"],
+                                    bar_width=0.1, error_bars=True, points=False, show=False, close=True)
+        fig, ax = plt.subplots()
+        self.imgs.append(fig)
+        fig.suptitle("Distance from Nest at Stimulus vs Time to Escape")
+        ax.set_xlabel("Distance (cm)")
+        ax.set_ylabel("Time to Escape (s)")
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        sns.regplot(x=wt_dist, y=wt_time, ax=ax, scatter=True,
+                    scatter_kws={'color': "teal", 'alpha': 0.7, 's': 10}, line_kws={'color': "teal"})
+        sns.regplot(x=blind_dist, y=blind_time, ax=ax, scatter=True,
+                    scatter_kws={'color': "lightgray", 'alpha': 0.7, 's': 10}, line_kws={'color': "lightgray"})
 
     def plot_traj_data(self):
         wt_true_locs, wt_false_locs, blind_true_locs, blind_false_locs = extract.extract_data(self.event_locs_file, escape=True, process_coords=True, get_escape_index=True, escape_col=3)
@@ -327,14 +413,19 @@ class FinalPlots:
 
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2, figsize=(14,10))
         self.imgs.append(fig)
+        fig.suptitle("Trajectories After Stimulus")
         ax1.imshow(self.background_image, cmap='gray', extent=[*x_limits, *y_limits], aspect='auto', zorder=0)
+        ax1.set_title("WT - escape")
         plots.time_plot(fig, ax1, norm_true_wt_locs, fps=30, xlim=x_limits, ylim=y_limits, show=False, close=True, colorbar=False)
         ax2.imshow(self.background_image, cmap='gray', extent=[*x_limits, *y_limits], aspect='auto', zorder=0)
-        plots.time_plot(fig, ax2, norm_false_wt_locs, fps=30, xlim=x_limits, ylim=y_limits, show=False, close=True, colorbar=False)
+        ax2.set_title("WT - no escape")
+        plots.time_plot(fig, ax2, norm_false_wt_locs, cbar_dim=[0.92, 0.53, 0.015, 0.35], fps=30, xlim=x_limits, ylim=y_limits, show=False, close=True, colorbar=True)
         ax3.imshow(self.background_image, cmap='gray', extent=[*x_limits, *y_limits], aspect='auto', zorder=0)
+        ax3.set_title(f"{self.mouse_type} - escape")
         plots.time_plot(fig, ax3, norm_true_blind_locs, fps=30, xlim=x_limits, ylim=y_limits, show=False, close=True, colorbar=False)
         ax4.imshow(self.background_image, cmap='gray', extent=[*x_limits, *y_limits], aspect='auto', zorder=0)
-        plots.time_plot(fig, ax4, norm_false_blind_locs, fps=30, xlim=x_limits, ylim=y_limits, show=False, close=True, colorbar=False)
+        ax4.set_title(f"{self.mouse_type} - no escape")
+        plots.time_plot(fig, ax4, norm_false_blind_locs, cbar_dim=[0.92, 0.11, 0.015, 0.35], fps=30, xlim=x_limits, ylim=y_limits, show=False, close=True, colorbar=True)
 
     def plot_tort_data(self):
         wt_true_locs, wt_false_locs, blind_true_locs, blind_false_locs = extract.extract_data(self.event_locs_file, data_start=154, escape=True, process_coords=True, get_escape_index=True, escape_col=3)
@@ -381,6 +472,7 @@ class FinalPlots:
         plots.plot_bar_two_groups(fig, ax, wt_true_dist_ratio, blind_true_dist_ratio,
             "Mouse type", "Tortuosity of Escape Path (log)","WT", f"{self.mouse_type}",color1='teal', color2='lightgray',
             bar_width=0.2, error_bars=True, points=False, log_y=True, ylim=None, title=None, show=False, close=True)
+        ax.set_xlabel("Mouse Type")
         ax.set_ylabel("Tortuosity of escape path (log)")
         
         fig, ax = plt.subplots(figsize=(5,5))
@@ -439,6 +531,44 @@ class FinalPlots:
                                     log_y=True, ylim=None, show=False, close=True)
         ax.set_xlabel("Mouse Type")
         ax.set_ylabel("Tortuosity of Path Since Last Visiting Nest (log)")
+        
+        ##FOR POSTER
+        fig, ax = plt.subplots(figsize=(5,5))
+        self.imgs.append(fig)
+        fig.suptitle("Tortuosity of Escape Path")
+        plots.plot_grouped_bar_chart(fig, ax, wt_true_dist_ratio, wt_false_dist_ratio, blind_true_dist_ratio, blind_false_dist_ratio,
+            ["WT", f"{self.mouse_type}"], labels=["escape", "no escape", "escape", "no escape"], colors=["teal", "cadetblue", "darkgray", "lightgray"], 
+            bar_width=0.1, error_bars=True, log_y=True, ylim=None, show=False, close=True)
+        ax.set_xlabel("Mouse Type")
+        ax.set_ylabel("Tortuosity (log)")
+        
+        fig, ax = plt.subplots(figsize=(4, 3))
+        self.imgs.append(fig)
+        fig.suptitle("Tortuosity of Escape Path")
+
+        # Calculate weights for percentage histograms
+        wt_weights = np.ones_like(wt_true_dist_ratio) * 100 / len(wt_true_dist_ratio)
+        blind_weights = np.ones_like(blind_true_dist_ratio) * 100 / len(blind_true_dist_ratio)
+
+        ax.hist(wt_true_dist_ratio, bins=30, alpha=0.6, label="WT", color='teal', weights=wt_weights)
+        ax.hist(blind_true_dist_ratio, bins=20, alpha=0.6, label=f"{self.mouse_type}", color='gray', weights=blind_weights)
+
+        ax.set_xlabel("Tortuosity")
+        ax.set_ylabel("Percentage Frequency (%)")
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.legend()
+        plt.tight_layout()
+        
+        fig, ax = plt.subplots(figsize=(5,5))
+        self.imgs.append(fig)
+        fig.suptitle("Tortuosity of Path Since Last Visiting Nest")
+        plots.plot_grouped_bar_chart(fig, ax, wt_true_tort, wt_false_tort, blind_true_tort, blind_false_tort,  
+                                     ["WT", f"{self.mouse_type}"], labels=["escape", "no escape", "escape", "no escape"],
+                                     colors=["teal", "cadetblue", "darkgray", "lightgray"], bar_width=0.1, error_bars=True,
+                                    log_y=True, ylim=None, show=False, close=True)
+        ax.set_xlabel("Mouse Type")
+        ax.set_ylabel("Tortuosity(log)")
 
     def plot_behavior(self):
         wt_baseline_angles, blind_baseline_angles = extract.extract_data(self.global_angles_file, data_start=4, data_end=5400)
@@ -463,7 +593,7 @@ class FinalPlots:
         for i, (angle_set, locs_set) in enumerate(zip(angle_sets, locs_sets)):
             behavior_percentages_list = []
             for angles, locs in zip(angle_set, locs_set):
-                behavior_percentages = calc.analyse_behavior(angles, locs, fps=30)
+                behavior_percentages = behaviour.analyse_behavior(angles, locs, fps=30)
                 behavior_percentages_list.append(behavior_percentages)
 
             mean_behavior_percentages = {
@@ -519,6 +649,23 @@ class FinalPlots:
         
         axes[1, 3].pie(blind_false_behavior.values(), labels=blind_false_behavior.keys(), autopct='%1.1f%%', colors=['lightblue', 'orange', 'green', 'yellow'])
         axes[1, 3].set_title(f'{self.mouse_type}  - no escape')
+        
+        fig, (ax1, ax2) = plt.subplots(1,2, figsize=(10, 5))
+        self.imgs.append(fig)
+        colors = ['#84206b', '#ae5097', '#ffd4f4', '#c6abeb']
+        ax1.pie(wt_global_behavior.values(), labels=wt_global_behavior.keys(), autopct='%1.1f%%', colors=colors)
+        ax1.set_title('WT - Baseline')
+        ax2.pie(blind_global_behavior.values(), labels=blind_global_behavior.keys(), autopct='%1.1f%%', colors=colors)
+        ax2.set_title(f'{self.mouse_type} - Baseline')
+        
+        fig, (ax1, ax2) = plt.subplots(2,1, figsize=(5,10))
+        self.imgs.append(fig)
+        fig.suptitle("Proportion of Exploratory, Directed \n and Stationary Behaviour at Baseline")
+        colors = ['#84206b', '#ae5097', '#ffd4f4', '#c6abeb']
+        ax1.pie(wt_global_behavior.values(), labels=wt_global_behavior.keys(), autopct='%1.1f%%', colors=colors)
+        ax1.set_title('WT')
+        ax2.pie(blind_global_behavior.values(), labels=blind_global_behavior.keys(), autopct='%1.1f%%', colors=colors)
+        ax2.set_title(f'{self.mouse_type}')
 
     def plot_speed_data(self):
         global_wt_speeds, global_blind_speeds = extract.extract_data(self.global_speeds_file, data_start=4)
@@ -568,13 +715,52 @@ class FinalPlots:
         wt_true_ages, wt_false_ages, blind_true_ages, blind_false_ages = extract.extract_data_rows(self.event_speeds_file, data_row=2, escape=True)
 
         fig, axes = plt.subplots(4, 2, figsize=(10,10), gridspec_kw={'height_ratios': [1, 2, 1, 2]}, sharex='col')
-        
+        fig.suptitle("Speed Over Stimulus Event")
         plots.cmap_plot(fig, axes[0:2, :], wt_true_speeds, wt_false_speeds, wt_true_ages, wt_false_ages, title1="WT speed - escape", title2="WT speed - no escape",
-                       ylabel="Speed (pps)", ylim=(0,250), cbar_label="Speeds (pps)", cmap="viridis", fps=30, cbar_dim=[0.92, 0.51, 0.015, 0.22])
+                       ylabel="Speed (pps)", ylim=(0,300), cbar_label="Speeds (pps)", cmap="viridis", fps=30, cbar_dim=[0.92, 0.51, 0.015, 0.22])
         plots.cmap_plot(fig, axes[2:4, :], blind_true_speeds, blind_false_speeds, blind_true_ages, blind_false_ages, title1=f"{self.mouse_type} speed - escape", title2=f"{self.mouse_type} - no escape",
-                       ylabel="Speed (pps)", ylim=(0,250), cbar_label="Speeds (pps)", cmap="viridis", fps=30, cbar_dim=[0.92, 0.11, 0.015, 0.22])
+                       ylabel="Speed (pps)", ylim=(0,300), cbar_label="Speeds (pps)", cmap="viridis", fps=30, cbar_dim=[0.92, 0.11, 0.015, 0.22])
         self.imgs.append(fig)
- 
+        
+        ##FOR POSTER
+        fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+        fig.suptitle("Speed Over Stimulus Event")
+
+        plots.cmap_plot_noline(
+            fig, 
+            [axes[0, 0], axes[0, 1]],
+            wt_true_speeds,
+            wt_false_speeds,
+            wt_true_ages,
+            wt_false_ages,
+            title1="WT speed - escape",
+            title2="WT speed - no escape",
+            cmap="viridis",
+            fps=30,
+            vmin=100,
+            vmax=600,
+            cbar_label="Speeds (pps)",
+            cbar_dim=[0.92, 0.53, 0.015, 0.35]
+        )
+
+        plots.cmap_plot_noline(
+            fig,
+            [axes[1, 0], axes[1, 1]],
+            blind_true_speeds,
+            blind_false_speeds,
+            blind_true_ages,
+            blind_false_ages,
+            title1=f"{self.mouse_type} speed - escape",
+            title2=f"{self.mouse_type} speed - no escape",
+            cmap="viridis",
+            fps=30,
+            vmin=100,
+            vmax=600,
+            cbar_label="Speeds (pps)",
+            cbar_dim=[0.92, 0.11, 0.015, 0.35]
+        )
+        self.imgs.append(fig)
+                
     def plot_arena_coverage_data(self):
         event_wt_locs, event_blind_locs = extract.extract_data(self.event_locs_file, nested=True, data_start=154, data_end=None, escape=False, process_coords=True, get_escape_index=False, escape_col=3)
         all_wt_locs, all_blind_locs = extract.extract_data(self.global_locs_file, nested=True, data_start=3, data_end=5400, process_coords=True, escape_col=None)
@@ -621,20 +807,29 @@ class FinalPlots:
         ax1.set_ylabel("Arena Coverage (%)")
         ax2.set_ylabel("Total Distance Covered (cm)")
         
+        ##FOR POSTER
+        fig, ax = plt.subplots(figsize=(4,4.5))
+        self.imgs.append(fig)
+        fig.suptitle("Arena Coverage at Baseline")
+        plots.plot_bar_two_groups(fig, ax, wt_baseline_coverage, blind_baseline_coverage, x_label="", 
+                                  y_label="Arena coverage (%)", bar1_label="WT", bar2_label=f"{self.mouse_type}", color1="darkorange", color2="#f6d746",
+                                    bar_width=0.1, points=False, error_bars=True, show=False)
+        ax.set_xlabel("Mouse Type")
+        
     def plot_location_data(self):
         
         centre_roi = [200, 570, 620, 260]
         
         event_wt_locs, event_blind_locs = extract.extract_data(self.event_locs_file, nested=True, data_start=154, data_end=None,escape=False, process_coords=True, get_escape_index=False, escape_col=3)
-        all_wt_locs, all_blind_locs = extract.extract_data(self.global_locs_file, nested=True, data_start=3, data_end=5400, process_coords=True, escape_col=None)
+        all_wt_locs, all_blind_locs = extract.extract_data(self.global_locs_file, nested=True, data_start=3, data_end=5404, process_coords=True, escape_col=None)
         
-        wt_event_centre, wt_event_edge = calc.analyse_locs(event_wt_locs, 30, centre_roi)
-        blind_event_centre, blind_event_edge = calc.analyse_locs(event_blind_locs, 30, centre_roi)
-        wt_baseline_centre, wt_baseline_edge = calc.analyse_locs(all_wt_locs, 30, centre_roi)
-        blind_baseline_centre, blind_baseline_edge = calc.analyse_locs(all_blind_locs, 30, centre_roi)
+        wt_event_centre, wt_event_edge = behaviour.analyse_locs(event_wt_locs, 30, centre_roi)
+        blind_event_centre, blind_event_edge = behaviour.analyse_locs(event_blind_locs, 30, centre_roi)
+        wt_baseline_centre, wt_baseline_edge = behaviour.analyse_locs(all_wt_locs, 30, centre_roi)
+        blind_baseline_centre, blind_baseline_edge = behaviour.analyse_locs(all_blind_locs, 30, centre_roi)
         
-        wt_centre, wt_edge, wt_exit, wt_nest = calc.categorise_location(event_wt_locs)
-        blind_centre, blind_edge, blind_exit, blind_nest = calc.categorise_location(event_blind_locs)
+        wt_centre, wt_edge, wt_exit, wt_nest = behaviour.categorise_location(event_wt_locs)
+        blind_centre, blind_edge, blind_exit, blind_nest = behaviour.categorise_location(event_blind_locs)
         
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8,5))
         self.figs.append(fig)
@@ -644,13 +839,21 @@ class FinalPlots:
                                      colors=["darkorange", "orange", "deeppink", "hotpink"], bar_width=0.1, error_bars=True)
         plots.plot_grouped_bar_chart(fig, ax2, wt_event_centre, wt_event_edge, blind_event_centre, blind_event_edge,
                                      xticks=["WT", f"{self.mouse_type}"], labels=["centre", "edge", "centre", "edge"],
-                                     colors=["darkorange", "orange", "deeppink", "hotpink"], bar_width=0.1, error_bars=True)
-
-        ax1.set_ylabel("Time Spent (s)")
-        ax1.set_title("Baseline")
-        ax2.set_title("Events")
+                                     colors=["darkorange", "orange", "#f6d746", "#ffeb8c"], bar_width=0.1, error_bars=True)
         
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8,4))
+        ##FOR POSTER
+        fig, ax = plt.subplots(figsize=(5,4.5))
+        self.imgs.append(fig)
+        fig.suptitle("Percentage Time Spent at Centre of Arena vs Edge")
+        plots.plot_grouped_bar_chart(fig, ax, wt_baseline_centre, wt_baseline_edge, blind_baseline_centre, blind_baseline_edge,
+                                     xticks=["WT", f"{self.mouse_type}"], labels=["centre", "edge", "centre", "edge"],
+                                     colors=["darkorange", "orange", "#f6d746", "#ffeb8c"], bar_width=0.1, error_bars=True)
+        ax.set_xlabel("Mouse Type")
+    
+
+        ax.set_ylabel("Time Spent (%)")
+        
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8,4.5))
         self.figs.append(fig)
         
         plots.plot_bar_four_groups(fig, ax1, wt_centre, wt_edge, wt_exit, wt_nest, xticks=["centre", "edge", "exit region", "nest"], 
@@ -664,10 +867,56 @@ class FinalPlots:
         ax1.set_title("WT")
         ax2.set_title(f"{self.mouse_type}")
         ax1.set_ylabel("Time spent(s)")
-        plt.title("Time Spent at Stimulus")
+
+    def stretch_trials(self, trials, target_length=60):
+        stretched_trials = []
+        for trial in trials:
+            trial = np.array(trial, dtype=np.float64)
+            orig_len = len(trial)
+
+            if orig_len == 0:
+                stretched_trials.append([np.nan] * target_length)
+                continue
+
+            if orig_len == target_length:
+                stretched = trial
+            else:
+                x_orig = np.linspace(0, 1, orig_len)
+                x_target = np.linspace(0, 1, target_length)
+
+                if trial.ndim == 1:
+                    f = interp1d(x_orig, trial, kind='linear', fill_value='extrapolate', bounds_error=False)
+                    stretched = f(x_target)
+                else:
+                    stretched = np.vstack([
+                        interp1d(x_orig, trial[:, dim], kind='linear', fill_value='extrapolate', bounds_error=False)(x_target)
+                        for dim in range(trial.shape[1])
+                    ]).T
+
+            # Forward fill NaNs in stretched result
+            if stretched.ndim == 1:
+                # Fill starting NaNs with first valid value
+                if np.isnan(stretched[0]):
+                    first_valid = np.nanmin(stretched)
+                    stretched[0] = first_valid
+                for i in range(1, len(stretched)):
+                    if np.isnan(stretched[i]):
+                        stretched[i] = stretched[i - 1]
+            else:
+                for row in stretched:
+                    if np.isnan(row[0]):
+                        first_valid = np.nanmin(row)
+                        row[0] = first_valid
+                    for i in range(1, len(row)):
+                        if np.isnan(row[i]):
+                            row[i] = row[i - 1]
+
+            stretched_trials.append(stretched.tolist())
+
+        return stretched_trials
 
     def plot_distance_from_wall(self):
-        wt_true_locs, wt_false_locs, blind_true_locs, blind_false_locs = extract.extract_data(self.event_locs_file, data_start=4, data_end=454, escape=True, process_coords=True, escape_col=3)
+        wt_true_locs, wt_false_locs, blind_true_locs, blind_false_locs = extract.extract_data(self.event_locs_file, data_start=4, data_end=604, escape=True, process_coords=True, escape_col=3)
         wt_true_ages, wt_false_ages, blind_true_ages, blind_false_ages = extract.extract_data_rows(self.event_speeds_file, data_row=2, escape=True)
         
         corners = [(119,140), (750,158), (756,660), (100,653)]
@@ -684,8 +933,74 @@ class FinalPlots:
         plots.cmap_plot(fig, axes[2:4, :], blind_true_wall_dist, blind_false_wall_dist, blind_true_ages, blind_false_ages, title1=f"{self.mouse_type} distance - escape", title2=f"{self.mouse_type} distance - no escape",
                        ylabel="Distance", ylim=(0,100), cbar_label="Distance", cmap="coolwarm_r", fps=30, cbar_dim=[0.92, 0.11, 0.015, 0.22], vmin=0, vmax=250)
         self.imgs.append(fig)
+        
+        ##FOR POSTER    
+        conversion_factor = 46.5 / 645
 
-    from scipy.spatial import cKDTree  # Make sure this is at the top of your file
+        wt_true_locs_1, wt_false_locs_1, blind_true_locs_1, blind_false_locs_1 = extract.extract_data(self.event_locs_file, data_start=154, data_end=604, escape=True, get_escape_index=True, process_coords=True, escape_col=3)
+        wt_true_ages_1, blind_true_ages_1 = extract.extract_data_rows(self.event_speeds_file, data_row=2, escape=False)
+        wt_wall_dist = [[calc.point_to_rect(point, corners) for point in sublist] for sublist in wt_true_locs_1]
+        blind_wall_dist = [[calc.point_to_rect(point, corners) for point in sublist] for sublist in blind_true_locs_1]
+        
+        wt_wall_dist = [
+            [dist * conversion_factor for dist in trial]
+            for trial in wt_wall_dist
+        ]
+
+        blind_wall_dist = [
+            [dist * conversion_factor for dist in trial]
+            for trial in blind_wall_dist
+        ]
+
+                
+        wt_true_locs_end = [trial[-60:] for trial in wt_wall_dist]
+        blind_true_locs_end = [trial[-60:] for trial in blind_wall_dist]
+        wt_true_locs_end = self.stretch_trials(wt_true_locs_end, target_length=60)
+        blind_true_locs_end = self.stretch_trials(blind_true_locs_end, target_length=60)
+        
+        fig, (ax1,ax2) = plt.subplots(1, 2, figsize=(10, 5))
+        fig.suptitle("Distance to Nearest Edge \n 2 Seconds Before Escape")
+        plots.cmap_plot_2s(
+            fig,
+            [ax1, ax2],
+            wt_true_locs_end,
+            blind_true_locs_end,
+            wt_true_ages_1,
+            blind_true_ages_1,
+            title1=f"WT",
+            title2=f"{self.mouse_type}",
+            cmap="PuBu_r",
+            fps=30,
+            vmin=0,
+            vmax=7,
+            cbar_label="Distance (cm)",
+            cbar_dim=[0.92, 0.11, 0.015, 0.78]
+        )
+        self.imgs.append(fig)
+
+        # Flatten the lists of lists into single 1D arrays for histogram plotting
+        wt_flat = np.hstack(wt_true_locs_end)
+        blind_flat = np.hstack(blind_true_locs_end)
+
+        fig, ax = plt.subplots(figsize=(4, 3))
+        self.imgs.append(fig)
+        fig.suptitle("Distance to Nearest Edge \n 2 Seconds Before Escape")
+        # Using hex colors from PuRd palette (medium and dark)
+        wt_color = "#74a9cf"      # medium PuRd-ish pink
+        mouse_color = "#d0d1e6"   # darker PuRd-ish wine
+
+        wt_weights = np.ones_like(wt_flat) * 100 / len(wt_flat)
+        blind_weights = np.ones_like(blind_flat) * 100 / len(blind_flat)
+
+        ax.hist(wt_flat, bins=30, alpha=0.7, label="WT", color=wt_color, weights=wt_weights)
+        ax.hist(blind_flat, bins=20, alpha=0.7, label=f"{self.mouse_type}", color=mouse_color, weights=blind_weights)
+
+        ax.set_ylabel("Percentage Frequency (%)")
+        ax.set_xlabel("Distance (cm)")
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.legend()
+        plt.tight_layout()
 
     def plot_path_similarity(self):
         # --- Extract data ---
@@ -715,60 +1030,99 @@ class FinalPlots:
         distances, indices = stim_tree.query(before_locs, k=1)
 
         # --- Plot the paths ---
-        fig = plt.figure(figsize=(8, 6))
+        fig, ax1 = plt.subplots(figsize=(8, 6))
         self.figs.append(fig)
 
-        plt.plot(before_locs[:, 0], before_locs[:, 1], 'bo-', label='Before Stimulus')
-        plt.plot(stim_locs[:, 0], stim_locs[:, 1], 'ro-', label='After Stimulus')
+        x_limits = (0, 850)
+        y_limits = (755, 0)
 
-        # Connect each point in before_locs to its nearest in stim_locs
+        ax1.imshow(self.background_image, cmap="gray", extent=[*x_limits, *y_limits], aspect='auto', zorder=0)
+        ax1.plot(before_locs[:, 0], before_locs[:, 1], color='darkmagenta', marker='o', linestyle='-', label='Before Stimulus', markersize=2)
+        ax1.plot(stim_locs[:, 0], stim_locs[:, 1], color='orange', marker='o', linestyle='-', label='After Stimulus', markersize=2)
+
         for i, idx in enumerate(indices):
             x_vals = [before_locs[i][0], stim_locs[idx][0]]
             y_vals = [before_locs[i][1], stim_locs[idx][1]]
-            plt.plot(x_vals, y_vals, 'k--', alpha=0.5)
+            ax1.plot(x_vals, y_vals, color='k', linestyle=(0, (1, 0.5)), alpha=0.6)
 
-        plt.title("Path Comparison: Before vs After Stimulus (Nearest Points)")
-        plt.xlabel("X")
-        plt.ylabel("Y")
-        plt.legend()
-        plt.tight_layout()
+        ax1.set_title("Path Comparison: Before vs After Stimulus")
+        ax1.set_xlabel("X coordinate")
+        ax1.set_ylabel("Y coordinate")
+        ax1.legend()
 
+        # Remove top and right spines
+        ax1.spines['top'].set_visible(False)
+        ax1.spines['right'].set_visible(False)
+
+        # Compute similarity score
         wt_true_scores = calc.compute_nearest_euclidean_similarity(wt_true_before_locs, wt_true_stim_locs)
+
+        # Add similarity score text to plot
+        similarity_text = f"Similarity Score: {1 -(np.mean(wt_true_scores)):.3f}"
+        ax1.text(0.05, 0.95, similarity_text, transform=ax1.transAxes,
+                fontsize=10, verticalalignment='top', bbox=dict(boxstyle="round", facecolor="white", alpha=0.8))
+
+        plt.tight_layout()
+        self.imgs.append(fig)
+
         wt_false_scores = calc.compute_nearest_euclidean_similarity(wt_false_before_locs, wt_false_stim_locs)
         blind_true_scores = calc.compute_nearest_euclidean_similarity(blind_true_before_locs, blind_true_stim_locs)
         blind_false_scores = calc.compute_nearest_euclidean_similarity(blind_false_before_locs, blind_false_stim_locs)
 
-        print("WT true similarity avg:", np.mean(wt_true_scores))
-        print("WT false similarity avg:", np.mean(wt_false_scores))
-        print("Blind true similarity avg:", np.mean(blind_true_scores))
-        print("Blind false similarity avg:", np.mean(blind_false_scores))
-        
-        fig, ax = plt.subplots(figsize=(5, 4))
+        fig, ax = plt.subplots(figsize=(5, 5))
         self.figs.append(fig)
-
-        plots.plot_bar_four_groups(
+        self.imgs.append(fig)
+        fig.suptitle("Path Similarity Score")
+        
+        plots.plot_grouped_bar_chart(
             fig, ax,
             wt_true_scores, wt_false_scores, blind_true_scores, blind_false_scores,
-            xticks=["WT Escape", "WT No Escape", "Blind Escape", "Blind No Escape"],
-            labels=["WT", "WT", "Blind", "Blind"],
+            xticks=["WT", f"{self.mouse_type}"],
+            labels=["escape", "no escape", "escape", "no escape"],
             colors=["teal", "cadetblue", "darkgray", "lightgray"],
-            alpha=0.7,
-            bar_width=0.2,
+            bar_width=0.1,
             error_bars=True,
-            points=True,
+            points=False,
             log_y=True,
-            ylim=None,  # similarity scores max at 1
+            ylim=None,
             show=False,
             close=False
         )
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
 
         ax.set_ylabel("Path Similarity Score (1 / (1 + avg dist))")
+        plt.tight_layout()
+                
+                # Combine all scores into a DataFrame for seaborn plotting
+        data = {
+            'score': np.concatenate([wt_true_scores, wt_false_scores, blind_true_scores, blind_false_scores]),
+            'group': ['WT_escape'] * len(wt_true_scores) +
+                    ['WT_no_escape'] * len(wt_false_scores) +
+                    [f'{self.mouse_type}_escape'] * len(blind_true_scores) +
+                    [f'{self.mouse_type}_no_escape'] * len(blind_false_scores)
+        }
 
+        df = pd.DataFrame(data)
+
+        fig, ax = plt.subplots(figsize=(7, 5))
+        self.imgs.append(fig)
+        fig.suptitle("Path Similarity Score")
+
+        sns.violinplot(x='group', y='score', data=df, ax=ax, hue='group', palette=["teal", "cadetblue", "darkgray", "lightgray"], legend=False)
+
+
+        ax.set_ylabel("Path Similarity Score (1 / (1 + avg dist))")
+        ax.set_xlabel("Group")
+        ax.set_yscale("log")
+        ax.set_title("Distribution of Path Similarity Scores")
+
+        plt.tight_layout()
         
     def save_pdfs(self):
         if self.save_figs:
             if self.figs:
-                files.save_report(self.figs, self.folder, "test")
+                files.save_report(self.figs, self.folder)
         
         if self.save_imgs:
             if self.imgs:

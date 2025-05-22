@@ -92,7 +92,7 @@ def find_escape_index(column_data, min_escape_frames=5):
             break
     return escape_index
 
-def extract_data(file, nested=True, data_start=154, data_end=None, escape=False, process_coords=False, get_escape_index=False, escape_col=None):
+def extract_data(file, nested=True, data_start=None, data_end=None, escape=False, process_coords=False, get_escape_index=False, escape_col=None):
     df = pd.read_csv(file, header=None, low_memory=False)
 
     if nested:
@@ -122,6 +122,7 @@ def extract_data(file, nested=True, data_start=154, data_end=None, escape=False,
             escape_success_col = df.iloc[escape_col, col]
             if escape_success_col in ['True', 'TRUE']:
                 if process_coords:
+                    column_data = parse.parse_coord(column_data)
                     column_data_x = [coord[0] for coord in column_data]
                     escape_index = find_escape_index(column_data_x)
                     column_data = column_data[:escape_index]
@@ -187,3 +188,128 @@ def extract_data(file, nested=True, data_start=154, data_end=None, escape=False,
         return wt_true_data, wt_false_data, blind_true_data, blind_false_data
     else:
         return wt_data, blind_data
+    
+def extract_data_rows_bymousetype(file, data_row=None, escape=False, process_coords=False, mouse_type=None):
+    all_data = []
+    false_data = []
+    true_data = []
+
+    df = pd.read_csv(file, header=None, low_memory=False)
+
+    for col in df.columns:
+        mouse_type_csv = df.iloc[1, col]
+        escape_success_col = df.iloc[3, col]
+        column_data = df.iloc[data_row, col]
+
+        if isinstance(column_data, str):
+            try:
+                column_data = float(column_data)
+            except ValueError:
+                pass
+        
+        if process_coords:
+            column_data = parse.parse_coord(column_data)
+        else:
+            pass
+
+        if escape:
+            if escape_success_col in ['True', 'TRUE']:
+                if mouse_type_csv == mouse_type:
+                    true_data.append(column_data)
+                else:
+                    continue
+            if escape_success_col in ["FALSE", "False"]:
+                if mouse_type_csv == mouse_type:
+                    false_data.append(column_data)
+                else:
+                    continue
+
+        else:
+            if mouse_type_csv == mouse_type:
+                all_data.append(column_data)
+            else:
+                continue
+    
+    if escape:
+        return true_data, false_data
+    else:
+        return all_data
+    
+def extract_data_col_bymousetype(file, nested=True, data_start=None, data_end=None, escape=False, process_coords=False, get_escape_index=False, escape_col=None, mouse_type=None):
+    df = pd.read_csv(file, header=None, low_memory=False)
+
+    if nested:
+        all_data = [[] for _ in range(len(df.columns))]
+        true_data = [[] for _ in range(len(df.columns))]
+        false_data = [[] for _ in range(len(df.columns))]
+    else:
+        all_data = []
+        true_data, false_data = [], []
+
+    data_range = slice(data_start, data_end)
+
+    for col in df.columns:
+        mouse_type_csv = df.iloc[1, col]
+        column_data = df.iloc[data_range, col].tolist()
+
+        if process_coords:
+            column_data = [parse.parse_coord(coord) for coord in column_data]
+        else:
+            column_data = [float(x) if pd.notna(x) and x != 'nan' else np.nan for x in column_data]
+
+        if get_escape_index:
+            escape_success_col = df.iloc[escape_col, col]
+            if escape_success_col in ['True', 'TRUE']:
+                if process_coords:
+                    column_data_x = [coord[0] for coord in column_data]
+                    escape_index = find_escape_index(column_data_x)
+                    column_data = column_data[:escape_index]
+                else:
+                    escape_index = find_escape_index(column_data)
+                    column_data = column_data[:escape_index]
+            else:
+                escape_index = len(column_data)
+                column_data = column_data[:escape_index]
+
+        if escape and escape_col is not None:
+            escape_success_col = df.iloc[escape_col, col]
+            if escape_success_col in ['True', 'TRUE']:
+                if mouse_type_csv == mouse_type:
+                    if nested:
+                        true_data[col] = column_data
+                    else:
+                        true_data.extend(column_data)
+                else:
+                    pass
+                
+            elif escape_success_col in ['False', 'FALSE']:
+                if mouse_type_csv == mouse_type:
+                    if nested:
+                        false_data[col] = column_data
+                    else:
+                        false_data.extend(column_data)
+                else:
+                    pass
+        
+        else:
+            if mouse_type_csv == mouse_type:
+                if nested:
+                    all_data[col] = column_data
+                else:
+                    all_data.extend(column_data)
+            else:
+                pass
+
+    if nested:
+        all_data = [data for data in all_data if data]
+        true_data = [data for data in true_data if data]
+        false_data = [data for data in false_data if data]
+    else:
+        all_data = list(filter(None, all_data))
+        true_data = list(filter(None, true_data))
+        false_data = list(filter(None, false_data))
+
+    if escape:
+        return true_data, false_data
+    else:
+        return all_data

@@ -119,12 +119,16 @@ def save_report(figs, base_path, title=None):
     with PdfPages(report_path) as pdf:
         for fig in figs:
             pdf.savefig(fig)
-            
+
 def save_images(imgs, base_path, title=None):
+
+    folder = os.path.join(base_path + "_imgs")
+    os.makedirs(folder, exist_ok=True)
+
     for i, fig in enumerate(imgs):
         if title:
-            report_path = f"{base_path}_{title}_figure_{i + 1}.png"
+            img_path = os.path.join(folder, f"{title}_figure_{i + 1}.png")
         else:
-            report_path = f"{base_path}_figure_{i + 1}.png"
+            img_path = os.path.join(folder, f"figure_{i + 1}.png")
         
-        fig.savefig(report_path, format="png")
+        fig.savefig(img_path, format="png")
