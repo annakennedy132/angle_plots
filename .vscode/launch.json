@@ -1,15 +1,14 @@
 {
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python Debugger: Current File with Arguments",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": [
-                "${command:pickArgs}"
-            ],
+            "args": "${command:pickArgs}",
             "env": {
                 "QT_QPA_PLATFORM_PLUGIN_PATH": "/home/vpr/miniforge3/lib/python3.10/site-packages/cv2/qt/plugins",
                 "QT_QPA_PLATFORM": "xcb",

@@ -1,81 +1,9 @@
-# Project definitions (do not edit)
-Task:
-scorer:
-date:
-multianimalproject:
-identity:
-
-
-# Project path (change when moving around)
-project_path:
-
-
-# Default DeepLabCut engine to use for shuffle creation (either pytorch or tensorflow)
-engine: tensorflow
-
-
-# Annotation data set configuration (and individual video cropping parameters)
-video_sets:
-bodyparts:
-
-
-# Fraction of video to start/stop when extracting frames for labeling/refinement
-start:
-stop:
-numframes2pick:
-
-
-# Plotting configuration
-skeleton: []
-skeleton_color: black
-pcutoff:
-dotsize:
-alphavalue:
-colormap:
-
-
-# Training,Evaluation and Analysis configuration
-TrainingFraction:
-iteration:
-default_net_type:
-default_augmenter:
-snapshotindex:
-detector_snapshotindex:
-batch_size:
-detector_batch_size:
-
-
-# Cropping Parameters (for analysis and outlier frame detection)
-cropping:
-#if cropping is true for analysis, then set the values here:
-x1:
-x2:
-y1:
-y2:
-
-
-# Refinement configuration (parameters from annotation dataset configuration also relevant in this stage)
-corner2move2:
-move2corner:
-
-
-# Conversion tables to fine-tune SuperAnimal weights
-SuperAnimalConversionTables:
-tracking:
-  target_bodypart: head base   # must match string in h5 tracking file
-  background_image: images/arena.tif   # arena image to be displayed as background on escape plots
-  pcutoff: .5   # probability cutoff for target bodypart detection (0.0-1.0)
-  event:    # timings (in seconds) for analysis of escapes
-    t_minus: 5     # before stim
-    length: 10     # stim length
-    t_plus: 5     # after stim
-  min_escape_frames: 5   # the minimum frames with a speed of zero during the escape window to count as an escape 
-  max_escape_window: 10   # the escape window (in seconds) after stim onset
-  speed_cutoff: 33   # if speed exceeds this value it is assumed as an anomaly and the speed of teh frame before is used
-
 video:
   fps: 30   # frames per second of video
   thumbnail_scale: 0.6   # resize factor of video for labelling
+  min_path_length: 5   # the minimum number of frames in a path to be considered valid
+  conversion_factor: 0.072
+  area_conversion: 0.005184  # area unit conversion
 
 dimensions:
   video:
@@ -94,13 +22,10 @@ dimensions:
   - 100       # top (distance from exit xy)
   - 60       # right (distance from exit xy)
   - 100       # bottom (distance from exit xy)
-
-signal:
-  threshold: 30   # the number of bright frames that determines if the stim is on
-  start_frame: 1000   # number of frames at the beginning of the video to default to stim off
-  end_frame: 0   # number of frames at the end of the video to default to stim off
-  expected_range:   # the expected range of signal length
-  - 9.9       # seconds
-  - 10.1       # seconds
-
-
+  centre: [200, 570, 620, 260]
+  corners:
+    - [119, 140]
+    - [750, 158]
+    - [756, 660]
+    - [100, 653]
+  exit_roi: [700, 300, 800, 500]
