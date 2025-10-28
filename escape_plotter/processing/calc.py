@@ -57,7 +57,31 @@ def point_to_rect(point, corners, skip=None):
     return min_distance
 
 def apply_smoothing(data, sigma):
-            if sigma > 0:
-                return gaussian_filter1d(data, sigma=sigma)
-            else:
-                return np.array(data)  # no smoothing
+    if sigma > 0:
+        return gaussian_filter1d(data, sigma=sigma)
+    else:
+        return np.array(data)  # no smoothing
+
+def compute_avg_trace(data_list):
+    if not data_list:
+        return []
+
+    max_len = max(map(len, data_list))
+    result = []
+    for i in range(max_len):
+        values = [(lst[i]) if i < len(lst) else np.nan for lst in data_list]
+        values = [v for v in values if not np.isnan(v)]
+        result.append(np.mean(values) if values else np.nan)
+    return result
+
+def compute_avg_angle_trace(data_list):
+    if not data_list:
+        return []
+
+    max_len = max(map(len, data_list))
+    result = []
+    for i in range(max_len):
+        values = [abs(lst[i]) if i < len(lst) else np.nan for lst in data_list]
+        values = [v for v in values if not np.isnan(v)]
+        result.append(-np.mean(values) if values else np.nan)
+    return result

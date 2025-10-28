@@ -62,6 +62,10 @@ class FinalPlots:
         baseline_locs = [extract.extract_data_col(self.global_locs_file, nested=True, data_start=4, data_end=3604, process_coords=True, escape_col=None, mouse_type=mt) for mt in self.mouse_types]
         event_locs = [extract.extract_data_col(self.event_locs_file, nested=False, data_start=155, data_end=None, process_coords=True, escape=True, get_escape_index=True, escape_col=4, mouse_type=mt) for mt in self.mouse_types]
         
+        dist_ev = [extract.extract_data_col(self.event_distances_file, data_start=155, escape=True,
+                                                get_escape_index=True, escape_col=4, mouse_type=mt)for mt in self.mouse_types]
+        dist_ev = [coordinates.stretch_trials(x[0], target_length=450) for x in dist_ev]
+        
         #flatten for coord heatmaps
         flat_baseline_locs = [sum(mt_list, []) for mt_list in baseline_locs]
         flat_event_locs = [sum(mt_list, []) for mt_list in event_locs]
@@ -77,6 +81,7 @@ class FinalPlots:
             [100.0 - nest for nest in nests_one_group]
             for nests_one_group in self.nest_pct]
         
+        #--- Plotting ---
         coords_args = dict(
             xlabel="x", ylabel="y", gridsize=100, vmin=0, vmax=10, 
             xmin=80, xmax=790, ymin=700, ymax=70, smooth=1, show=False, close=True)
@@ -112,20 +117,20 @@ class FinalPlots:
         plot.plot_bar(fig, ax, self.nest_pct, "Mouse Type", "Time (%)", self.mouse_labels, colors,
                     ylim=(0, None), bar_width=0.2, points=False, error_bars=True, show=False, close=True)
         
-        #TODO: baseline disytance from wall averages (no shading, smoothed, need to add)
-        """fig, ax = plt.subplots(figsize=(5, 3.5), layout='tight')
+        #--- Plot distance from wall timecourses ---
+        fig, ax = plt.subplots(figsize=(5, 3.5), layout='tight')
         self.imgs.append(fig)
         plot.plot_speed_timecourses(
             fig, ax,
-            speeds_by_type=stretched_bs,
+            speeds_by_type=dist_ev,
             mouse_types=self.mouse_types,
-            colors=["cornflowerblue", "blue", "darkblue"],
+            color="tab:green",
             frame_time=30,
-            title="Facing angles (mean) - baseline",
-            y_label="Facing angle (degrees)",
+            title="Distance from wall - baseline",
+            y_label="Distance (cm)",
             x_label="Normalised Time",
-            ylim=(-180,0),
-            show=False, close=True)"""
+            ylim=(0,50),
+            show=False, close=True)
         
     def plot_angle_data(self):
         colors = self.colors
@@ -363,6 +368,7 @@ class FinalPlots:
             ylim=(0, 100),bar_width=0.2, 
             error_bars=False, stats=False,title=None)
 
+        #--- Plotting ---
         # --- Bar plots ---
         fig, ax = plt.subplots(figsize=(1*len(self.mouse_types), 3),  layout='tight')
         self.imgs.append(fig)
@@ -426,7 +432,7 @@ class FinalPlots:
 
     def plot_traj_data(self):
         
-        #--- Data extraction ---
+        #--- Extraction ---
         true_locs = []
         false_locs = []
         
@@ -438,7 +444,7 @@ class FinalPlots:
             false_locs.append(coordinates.stretch_trials(false_loc, target_length=450))
             print(f"Mouse type: {mouse_type}, Trials with escape: {len(true_loc)}, Trials without escape: {len(false_loc)}")
 
-        #--- PLot trajectories ---
+        #--- Plot trajectories ---
         x_limits = (0, 850)
         y_limits = (755, 0)
 
@@ -541,14 +547,14 @@ class FinalPlots:
         # --- Extract baseline and event speed data ---
         baseline_speeds = [extract.extract_data_col(self.global_speeds_file, data_start=4, data_end=3604,  mouse_type=mt)
                    for mt in self.mouse_types]
-        event_speeds_e   = [extract.extract_data_col(self.event_speeds_file,  data_start=155, escape=True,
+        event_speeds   = [extract.extract_data_col(self.event_speeds_file,  data_start=155, escape=True,
                                                     get_escape_index=True, escape_col=4, mouse_type=mt)[0]
                             for mt in self.mouse_types]
-
+        
         global_avg_speeds = _speed.get_avg_speeds(baseline_speeds)
-        event_avg_speeds  = _speed.get_avg_speeds(event_speeds_e)
+        event_avg_speeds  = _speed.get_avg_speeds(event_speeds)
         global_max_speeds = _speed.get_max_speeds(baseline_speeds)
-        event_max_speeds  = _speed.get_max_speeds(event_speeds_e)
+        event_max_speeds  = _speed.get_max_speeds(event_speeds)
 
         # --- True / false speeds ---
         tf_speeds = [extract.extract_data_col(self.event_speeds_file, data_start=5, data_end=605,
@@ -652,73 +658,79 @@ class FinalPlots:
                 fig=fig, ax=ax, x=baseline_data, y=event_data, label=label, color=color,
                 x_label="Speed at Baseline (cm/s)", y_label="Speed at Event (cm/s)", title="", text_index=i, stats=True,scatter=False, csv_path=self.folder,
                 show=False, close=False)
-
         ax.legend(title="Mouse Type")
-        plt.tight_layout()
-        plt.close()
         
         #--- Plot speed timecourses ---
-        
-        #TODO: baseline speed averages (no shading, smoothed, need to add)
-        """fig, ax = plt.subplots(figsize=(5, 3.5), layout='tight')
-        self.imgs.append(fig)
-        plot.plot_speed_timecourses(
-            fig, ax,
-            speeds_by_type=stretched_bs,
-            mouse_types=self.mouse_types,
-            colors=["cornflowerblue", "blue", "darkblue"],
-            frame_time=30,
-            title="Facing angles (mean) - baseline",
-            y_label="Facing angle (degrees)",
-            x_label="Normalised Time",
-            ylim=(-180,0),
-            show=False, close=True)"""
-        
         fig, ax = plt.subplots(figsize=(5, 3.5), layout='tight')
         self.imgs.append(fig)
         plot.plot_speed_timecourses(
             fig, ax,
-            speeds_by_type=stretched_ts,
+            speeds_by_type=baseline_speeds,
             mouse_types=self.mouse_types,
-            colors=["red", "lightcoral", "indianred"],
-            frame_time=450,
-            title="True-Escape Speeds (mean ± SD)",
+            color="red",
+            frame_time=30,
+            title="Speed (mean) - baseline",
             y_label="Speed (cm/s)",
             x_label="Normalised Time",
-            show=False, close=True) 
+            ylim=(0,20), smooth=20, shade=False,
+            show=False, close=True)
         
-        if len(self.mouse_types) > 2:
+        if len(self.mouse_types) <=3:
+            fig, ax = plt.subplots(figsize=(5, 3.5), layout='tight')
+            self.imgs.append(fig)
+            plot.plot_speed_timecourses(
+                fig, ax,
+                speeds_by_type=stretched_ts,
+                mouse_types=self.mouse_types,
+                color="red",
+                frame_time=450,
+                title="True-Escape Speeds (mean ± SD)",
+                y_label="Speed (cm/s)",
+                x_label="Normalised Time",
+                show=False, close=True) 
+        
+        if len(self.mouse_types) > 3:
+            fig, ax = plt.subplots(figsize=(5, 3.5), layout='tight')
+            self.imgs.append(fig)
+            plot.plot_speed_timecourses(
+                fig, ax,
+                speeds_by_type=stretched_ts[:2],
+                mouse_types=self.mouse_types[:2],
+                color="red",
+                frame_time=450,
+                title="True-Escape Speeds (mean ± SD)",
+                y_label="Speed (cm/s)",
+                ylim=(0,50),
+                x_label="Normalised Time",
+                show=False, close=True)
+            
             fig, ax = plt.subplots(figsize=(5, 3.5), layout='tight')
             self.imgs.append(fig)
             plot.plot_speed_timecourses(
                 fig, ax,
                 speeds_by_type=stretched_ts[2:],
                 mouse_types=self.mouse_types[2:],
-                colors=["red", "lightcoral"],
+                color="red",
                 frame_time=450,
                 title="True-Escape Speeds (mean ± SD)",
                 y_label="Speed (cm/s)",
                 ylim=(0,50),
                 x_label="Normalised Time",
-                show=False, close=True) 
+                show=False, close=True)
         
     def plot_arena_coverage_data(self):
         colors = self.colors
         
-        baseline_locs = [extract.extract_data_col(self.global_locs_file, data_start=4, data_end=3604, process_coords=True, mouse_type=mt)
-            for mt in self.mouse_types]
+        baseline_locs = [extract.extract_data_col(self.global_locs_file, data_start=4, data_end=3604, process_coords=True, mouse_type=mt)for mt in self.mouse_types]
         event_locs = [extract.extract_data_col(self.event_locs_file, data_start=155, escape=True, process_coords=True,
-                                                                    get_escape_index=True, escape_col=4, mouse_type=mt)[0]
-            for mt in self.mouse_types]
+                                                                    get_escape_index=True, escape_col=4, mouse_type=mt)[0]for mt in self.mouse_types]
 
         baseline_coverage = [coordinates.calculate_arena_coverage(locs) for locs in baseline_locs]
         event_coverage = [coordinates.calculate_arena_coverage(locs) for locs in event_locs]
         
         # --- Baseline coverage, nest, escape correlations ---
-        escape_success = [extract.extract_data_rows(self.escape_success_file, data_row=4, mouse_type=mt)
-                        for mt in self.mouse_types]
-        baseline_ids = [extract.extract_data_rows(self.global_locs_file, data_row=0, mouse_type=mt)
-                        for mt in self.mouse_types]
+        escape_success = [extract.extract_data_rows(self.escape_success_file, data_row=4, mouse_type=mt)for mt in self.mouse_types]
+        baseline_ids = [extract.extract_data_rows(self.global_locs_file, data_row=0, mouse_type=mt)for mt in self.mouse_types]
 
         # --- Nest counts ---
         self.nest_counts = [[sum(np.isnan(p).any() for p in trial) / self.fps for trial in trials]
@@ -750,13 +762,11 @@ class FinalPlots:
         for i, label in enumerate(self.mouse_labels):
             nest_vals = list(nest_dicts[i].values())
             escape_vals = list(escape_dicts[i].values())
-
             plot.regression_plot(fig, ax,
                 nest_vals, escape_vals,label, colors[i],
                 x_label="Time spent in nest (s)", y_label="Escape Success (%)",
                 title="Nest Time vs Escape Success",
                 text_index=i, stats=True, scatter=False, csv_path=self.folder)
-            
             ax.set_ylim(0, 105)
         self.imgs.append(fig)
             
@@ -764,12 +774,10 @@ class FinalPlots:
         for i, label in enumerate(self.mouse_labels):
             coverage_vals = list(coverage_dicts[i].values())
             escape_vals = list(escape_dicts[i].values())
-
             plot.regression_plot(fig, ax,
                 coverage_vals, escape_vals, label, colors[i],
                 x_label="Arena Coverage (%)", y_label="Escape Success (%)",
                 title="Coverage vs Escape Success", text_index=i, stats=True)
-            
         self.imgs.append(fig)
             
     def plot_distance_from_wall(self, seconds_before_escape=2, threshold=3.0, min_fraction_near_wall=0.8):
@@ -898,7 +906,7 @@ class FinalPlots:
             Ls = self.true_total_dists[i]
             path_area_norm_all.append([a / L if L else np.nan for a, L in zip(areas_scaled, Ls)])
 
-        # ---------------- similarity visuals ----------------
+        # ---------------- Plotting ----------------
         fig, ax = plt.subplots(figsize=(6, 4), layout="tight")
         self.imgs.append(fig)
         plot.plot_histogram(fig, ax,
@@ -993,7 +1001,6 @@ class FinalPlots:
         if self.save_pdf:
             if self.imgs:
                 files.save_report(self.imgs, self.folder)
-        
         if self.save_imgs:
             if self.imgs:
                 files.save_images(self.imgs, self.folder)

@@ -16,7 +16,7 @@ def run():
     #fp.plot_traj_data()
     #fp.plot_tort_data()
     #fp.plot_behaviour()
-    #fp.plot_speed_data()
+    fp.plot_speed_data()
     #fp.plot_arena_coverage_data()
     ##fp.plot_distance_from_wall(seconds_before_escape=15)
     #fp.plot_path_similarity_and_area()

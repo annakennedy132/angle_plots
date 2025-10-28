@@ -615,34 +615,14 @@ def plot_grouped_bar(fig, ax, grouped_data, xticks, labels, colors,
     return fig, ax
 
 def plot_speed_timecourses(
-    fig, ax, speeds_by_type, mouse_types, colors,
-    frame_time=None,                 # NEW: scaling factor for x-axis
-    title="Speed Timecourses (mean ± SD)",
-    x_label=None, y_label="Speed (units/frame)", ylim=(0,None),
+    fig, ax, speeds_by_type, mouse_types, color=None,
+    frame_time=None,
+    title="",
+    x_label=None, y_label="", ylim=(0, None),
     alpha_fill=0.25, linewidth=1.8,
-    show=False, close=True
-):
-    """
-    Plot per-frame mean ± SD speed for each mouse type.
+    smooth=None,
+    shade=True, show=False, close=True):
 
-    Parameters
-    ----------
-    fig, ax : matplotlib Figure/Axes to draw on
-    speeds_by_type : list of iterables
-        speeds_by_type[i] = list/array of trials for mouse type i,
-        each trial shape (T,) with identical length T (e.g., 450 frames).
-    mouse_types : list of str, labels for legend (same length as speeds_by_type)
-    colors : list of matplotlib colors, one per mouse type
-    frame_time : float or None
-        Scaling factor for the x-axis.
-        - None: x-axis = raw frames [0..T-1]
-        - e.g. 30: divide frames by 30 → x-axis = seconds (fps=30)
-        - e.g. 450: divide frames by 450 → normalized time (0..1)
-    title, x_label, y_label : str
-    alpha_fill : float, alpha for shaded SD region
-    linewidth : float, line width for mean curves
-    show, close : bool, whether to plt.show() / plt.close()
-    """
     # determine T from the first non-empty mouse type
     T = None
     for group in speeds_by_type:
@@ -660,23 +640,76 @@ def plot_speed_timecourses(
 
     # build x-axis
     if frame_time is None:
-        x = np.arange(T)  # frames
+        x = np.arange(T)
         default_x_label = "Frame"
     else:
         x = np.arange(T) / frame_time
         default_x_label = "Time (s)" if frame_time < 100 else "Normalized time"
 
-    for mt_label, color, trials in zip(mouse_types, colors, speeds_by_type):
+    # color handling
+    if isinstance(color, (list, tuple)) and len(color) > 1:
+        colors = color
+    else:
+        n = len(mouse_types)
+        base_color = color
+        colors = [base_color for _ in range(n)]
+        alphas = np.linspace(1.0, 0.5, n)
+    
+    # smoothing kernel (if requested)
+    if smooth is not None and smooth > 0:
+        sigma = float(smooth)
+        truncate = 3.0
+        radius = int(truncate * sigma + 0.5)
+        xk = np.arange(-radius, radius + 1)
+        kernel = np.exp(-0.5 * (xk / sigma) ** 2)
+        kernel /= kernel.sum()
+    else:
+        kernel = None
+
+    for i, (mt_label, color, trials) in enumerate(zip(mouse_types, colors, speeds_by_type)):
         if len(trials) == 0:
             continue
+
         A = np.asarray(trials, dtype=float)
         if A.ndim == 1:
             A = A[None, :]
-        mean = np.nanmean(A, axis=0)
-        sd   = np.nanstd(A, axis=0, ddof=1) if A.shape[0] > 1 else np.zeros_like(mean)
 
-        ax.plot(x, mean, color=color, lw=linewidth, label=mt_label)
-        ax.fill_between(x, mean - sd, mean + sd, color=color, alpha=alpha_fill, linewidth=0)
+        valid = (~np.isnan(A)) & (A != 0)
+
+        n_eff  = valid.sum(axis=0).astype(float)                 # count of valid samples
+        A_fill = np.where(valid, A, 0.0)                         # zero out invalid entries
+
+        # mean (safe divide; frames with no data -> NaN)
+        sum_  = A_fill.sum(axis=0)
+        mean  = np.divide(sum_, n_eff, out=np.full_like(sum_, np.nan), where=n_eff > 0)
+
+        # sample variance (ddof=1) on valid entries only
+        sumsq = (A_fill * A_fill).sum(axis=0)
+        var_num = sumsq - (sum_**2) / np.where(n_eff > 0, n_eff, 1.0)
+        var_den = n_eff - 1.0
+        var = np.divide(var_num, var_den, out=np.zeros_like(var_num), where=var_den > 0)
+        var = np.maximum(var, 0.0)
+        sd = np.sqrt(var)
+
+        # in-house smoothing (ignoring zeros)
+        if kernel is not None:
+            mask_mean = ~np.isnan(mean)
+            valid = np.convolve(mask_mean.astype(float), kernel, mode='same')
+            smoothed = np.convolve(np.nan_to_num(mean) * mask_mean, kernel, mode='same')
+            mean = np.divide(smoothed, valid, out=np.nan*np.ones_like(smoothed), where=valid > 0)
+
+            mask_sd = ~np.isnan(sd)
+            valid_sd = np.convolve(mask_sd.astype(float), kernel, mode='same')
+            smoothed_sd = np.convolve(np.nan_to_num(sd) * mask_sd, kernel, mode='same')
+            sd = np.divide(smoothed_sd, valid_sd, out=np.nan*np.ones_like(smoothed_sd), where=valid_sd > 0)
+
+        # transparency for single-color case
+        alpha_line = alphas[i] if 'alphas' in locals() else 1.0
+        alpha_fill_i = alpha_fill * alpha_line
+
+        ax.plot(x, mean, color=color, lw=linewidth, alpha=alpha_line, label=mt_label)
+        if shade:
+            ax.fill_between(x, mean - sd, mean + sd, color=color, alpha=alpha_fill_i, linewidth=0)
 
     ax.set_title(title)
     ax.set_xlabel(x_label or default_x_label)
@@ -691,6 +724,7 @@ def plot_speed_timecourses(
     if close:
         plt.close()
     return fig, ax
+
 
 def plot_histogram(fig, ax, data_list, labels, colors, bins=20, xlabel="Value",
                     ylabel="Frequency (%)", show_median=True, xlim=None, alpha=0.45,
