@@ -1,27 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
 
-def get_baseline_stats(coords, max_frames=3600, fps=30):
-
-    times_success = []   # arrays of times (s) for successful trials only
-    fail_flags    = []   # arrays of 0/100 per trial (for % failure bar w/ points)
-
-    for trials in coords:
-        ts = []
-        ff = []
-        for trial in trials:
-            L = len(trial)
-            if L >= max_frames:       # did not find nest (censored)
-                ff.append(100.0)
-            else:                      # success
-                ts.append(L / fps)
-                ff.append(0.0)
-        times_success.append(np.asarray(ts, dtype=float))
-        fail_flags.append(np.asarray(ff, dtype=float))
-    
-    return times_success, fail_flags
-
-
 def stretch_trials(trials, target_length=60):
     stretched_trials = []
     for trial in trials:
@@ -96,3 +75,92 @@ def calculate_arena_coverage(locations, grid_size=20, arena_bounds=(90, 790, 80,
             coverage_percentages.append(percentage_covered)
 
         return coverage_percentages
+
+def compute_group_msd(trials, fps, max_lag_s=5):
+    """
+    Compute MSD for a group of trials.
+
+    trials: list of trials, each trial is a sequence of positions [x,y,...]
+    fps: frames per second
+    max_lag_s: maximum lag in seconds for MSD
+    """
+    max_lag = int(max_lag_s * fps)
+    msds = []
+
+    for trial in trials:
+        coords = np.asarray(trial)
+
+        # Assume coords[...,0] = x, coords[...,1] = y
+        coords = coords[:, :2]
+
+        # Drop frames with NaNs in x or y
+        valid = ~np.isnan(coords).any(axis=1)
+        coords = coords[valid]
+
+        T = len(coords)
+        if T < 3:
+            continue
+
+        L = min(max_lag, T - 1)  # max lag in frames for this trial
+        trial_msd = np.empty(L)
+
+        for lag in range(1, L + 1):
+            disp = coords[lag:] - coords[:-lag]
+            sq = np.sum(disp ** 2, axis=1)
+            trial_msd[lag - 1] = np.mean(sq)
+
+        msds.append(trial_msd)
+
+    if not msds:
+        return None
+    
+    # Use the maximum available lag length
+    L_max = max(len(m) for m in msds)
+    n_trials = len(msds)
+
+    # Pad with NaNs so we can use nanmean/nanstd
+    msd_mat = np.full((n_trials, L_max), np.nan)
+    for i, m in enumerate(msds):
+        msd_mat[i, :len(m)] = m
+
+    # Mean MSD at each lag (over available trials)
+    mean_msd = np.nanmean(msd_mat, axis=0)
+
+    # Effective number of trials contributing at each lag
+    n_eff = np.sum(~np.isnan(msd_mat), axis=0)
+
+    # SEM at each lag (NaN where fewer than 2 trials contribute)
+    sem_msd = np.nanstd(msd_mat, axis=0, ddof=1)
+    sem_msd = sem_msd / np.sqrt(n_eff)
+    sem_msd[n_eff <= 1] = np.nan
+
+    lags_frames = np.arange(1, L_max + 1)
+    lags_sec = lags_frames / fps
+
+    return lags_sec, mean_msd, sem_msd
+
+def fit_msd_alpha(lags_sec, mean_msd, min_lag=0.05, max_lag=1.0):
+    """
+    Fit MSD exponent alpha from log-log MSD curve.
+    Only uses lags between min_lag and max_lag (seconds)
+    to avoid noise and plateau.
+    """
+    lags_sec = np.asarray(lags_sec)
+    mean_msd = np.asarray(mean_msd)
+
+    valid = (lags_sec >= min_lag) & (lags_sec <= max_lag)
+    if valid.sum() < 3:
+        return np.nan
+
+    x = np.log10(lags_sec[valid])
+    y = np.log10(mean_msd[valid])
+
+    alpha, _ = np.polyfit(x, y, 1)   # slope = α
+    return alpha
+
+def compute_alpha(trials, fps, maxlag, minlag, maxfit):
+    res = compute_group_msd(trials, fps, max_lag_s=maxlag)
+    if res is None:
+        return np.nan
+    lags, mean, _ = res
+    return fit_msd_alpha(lags, mean, min_lag=minlag, max_lag=maxfit)

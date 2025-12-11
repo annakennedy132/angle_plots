@@ -30,3 +30,38 @@ def stretch_angle_trials(trials, target_length=60):
         stretched_trials.append(stretched.tolist())
 
     return stretched_trials
+
+def _to_rad(arr_deg):
+    a = np.asarray(arr_deg, dtype=float)
+    return np.deg2rad(a[~np.isnan(a)])
+
+def compute_mvl(angle_trials_deg):
+    mvl = []
+    for trial in angle_trials_deg:
+        th = _to_rad(trial)
+        if th.size == 0:
+            mvl.append(np.nan)
+            continue
+        C = np.cos(th).sum()
+        S = np.sin(th).sum()
+        mvl.append(np.hypot(C, S) / th.size)
+    return mvl
+
+def heading_autocorr(angle_trials_deg, max_lag):
+    Cs = []
+    for lag in range(1, max_lag + 1):
+        trial_means = []
+        for trial in angle_trials_deg:
+            a = np.asarray(trial, dtype=float)
+            n = a.size - lag
+            if n <= 0:
+                continue
+            t0 = a[:n]
+            t1 = a[lag:]
+            mask = ~np.isnan(t0) & ~np.isnan(t1)
+            if mask.any():
+                # cos of difference avoids unwrap issues
+                trial_means.append(np.cos(np.deg2rad(t1[mask] - t0[mask])).mean())
+        Cs.append(np.nanmean(trial_means) if len(trial_means) else np.nan)
+    lags = np.arange(1, max_lag + 1)
+    return lags, np.array(Cs)

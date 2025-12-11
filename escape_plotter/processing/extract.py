@@ -15,6 +15,8 @@ def extract_data_rows(file, data_row=None, escape=False, process_coords=False, m
         mouse_type_csv = df.iloc[2, col]
         escape_success_col = df.iloc[4, col]
         column_data = df.iloc[data_row, col]
+        
+        
 
         if isinstance(column_data, str):
             try:
@@ -50,94 +52,125 @@ def extract_data_rows(file, data_row=None, escape=False, process_coords=False, m
     else:
         return all_data
     
-def extract_data_col(file, nested=True, data_start=None, data_end=None, escape=False, process_coords=False, get_escape_index=False, escape_col=None, mouse_type=None):
+
+def extract_data_col(
+    file,
+    nested=True,
+    data_start=None,
+    data_end=None,
+    escape=False,
+    process_coords=False,
+    get_escape_index=False,
+    escape_col=None,
+    mouse_type=None
+):
+    """
+    Read per-trial data from a CSV where each column is a trial.
+    - Preserves interior NaNs inside trials.
+    - Trims only trailing padding (empty/NaN/"nan"/"none") per column within [data_start:data_end].
+    - Optionally cuts each trial at an escape index.
+    - Optionally classifies trials into TRUE/FALSE (by escape_col) when escape=True.
+    - Filters by mouse_type using row 2 (0-based) of each column.
+
+    Returns:
+      - if escape=True: (true_data, false_data)
+      - else: all_data
+
+    Notes:
+      - `parse.parse_coord` and `find_escape_index` must exist in your environment.
+    """
     df = pd.read_csv(file, header=None, low_memory=False)
-    mouse_type=mouse_type.lower()
+    mouse_type = mouse_type.lower() if mouse_type else None
 
+    # ----- helpers -----
+    def is_filled(x):
+        """Cell counts as filled if not NaN/empty/''/'nan'/'none' (case-insensitive)."""
+        if pd.isna(x):
+            return False
+        if isinstance(x, str):
+            s = x.strip().lower()
+            return s not in ("", "nan", "none")
+        return True
+
+    def cell(r, c):
+        try:
+            return df.iat[r, c]
+        except Exception:
+            return np.nan
+
+    def cast_float(x):
+        if is_filled(x):
+            try:
+                return float(x)
+            except Exception:
+                return np.nan
+        return np.nan
+
+    # ----- outputs (append-only) -----
     if nested:
-        all_data = [[] for _ in range(len(df.columns))]
-        true_data = [[] for _ in range(len(df.columns))]
-        false_data = [[] for _ in range(len(df.columns))]
+        all_data, true_data, false_data = [], [], []
     else:
-        all_data = []
-        true_data, false_data = [], []
+        all_data, true_data, false_data = [], [], []
 
+    # ----- row window -----
     data_range = slice(data_start, data_end)
 
+    # ----- iterate trials (columns) -----
     for col in df.columns:
-        mouse_type_csv = str(df.iloc[2, col])
-        column_data = df.iloc[data_range, col].tolist()
+        # filter by mouse type (row index 2 holds the type)
+        mt_csv = str(cell(2, col)).lower()
+        if mouse_type and mt_csv != mouse_type:
+            continue
 
+        # take the window for this column
+        col_series = df.iloc[data_range, col]
+
+        # trim ONLY trailing empties (keep interior NaNs)
+        mask = col_series.map(is_filled).to_numpy()
+        if mask.any():
+            last_idx = np.flatnonzero(mask)[-1]
+            col_series = col_series.iloc[:last_idx + 1]
+        else:
+            # nothing real in this window -> empty trial
+            col_series = col_series.iloc[0:0]
+
+        # parse/cast after trimming
         if process_coords:
-            column_data = [parse.parse_coord(coord) for coord in column_data]
+            # keep NaNs where cells are not filled
+            column_data = [parse.parse_coord(v) if is_filled(v) else np.nan
+                           for v in col_series.tolist()]
         else:
-            column_data = [float(x) if pd.notna(x) and x != 'nan' else np.nan for x in column_data]
+            column_data = [cast_float(v) for v in col_series.tolist()]
 
-        if get_escape_index and escape:
-            escape_success_col = df.iloc[escape_col, col]
-            if escape_success_col in ['True', 'TRUE']:
-                if process_coords:
-                    column_data_x = [coord for coord in column_data]
-                    escape_index = find_escape_index(column_data_x)
-                    column_data = column_data[:escape_index]
-                else:
-                    escape_index = find_escape_index(column_data)
-                    column_data = column_data[:escape_index]
-            else:
-                escape_index = len(column_data)
-                column_data = column_data[:escape_index]
-                
-        if get_escape_index and not escape:
-            if process_coords:
-                    column_data_x = [coord for coord in column_data]
-                    escape_index = find_escape_index(column_data_x)
-                    column_data = column_data[:escape_index]
-            else:
-                escape_index = len(column_data)
-                column_data = column_data[:escape_index]
+        # optionally cut at escape index (regardless of escape classification)
+        if get_escape_index:
+            # pass the series exactly as your find_escape_index expects
+            escape_index = find_escape_index(column_data)
+            column_data = column_data[:escape_index]
 
+        # classify into TRUE/FALSE groups if requested
         if escape and escape_col is not None:
-            escape_success_col = df.iloc[escape_col, col]
-            if escape_success_col in ['True', 'TRUE']:
-                if mouse_type_csv == mouse_type:
-                    if nested:
-                        true_data[col] = column_data
-                    else:
-                        true_data.extend(column_data)
-                else:
-                    pass
-                
-            elif escape_success_col in ['False', 'FALSE']:
-                if mouse_type_csv == mouse_type:
-                    if nested:
-                        false_data[col] = column_data
-                    else:
-                        false_data.extend(column_data)
-                else:
-                    pass
-        
-        else:
-            if mouse_type_csv == mouse_type:
-                if nested:
-                    all_data[col] = column_data
-                else:
-                    all_data.extend(column_data)
+            esc_flag = str(cell(escape_col, col)).upper()
+            if esc_flag == "TRUE":
+                if nested: true_data.append(column_data)
+                else:      true_data.extend(column_data)
+            elif esc_flag == "FALSE":
+                if nested: false_data.append(column_data)
+                else:      false_data.extend(column_data)
             else:
+                # skip columns without a clear TRUE/FALSE flag
                 pass
+        else:
+            # just collect all trials
+            if nested: all_data.append(column_data)
+            else:      all_data.extend(column_data)
 
-    if nested:
-        all_data = [data for data in all_data if data]
-        true_data = [data for data in true_data if data]
-        false_data = [data for data in false_data if data]
-    else:
-        all_data = list(filter(None, all_data))
-        true_data = list(filter(None, true_data))
-        false_data = list(filter(None, false_data))
-
+    # return per the original contract
     if escape:
         return true_data, false_data
     else:
         return all_data
+
 
 def extract_angle_segments(file, data_start=None, data_end=None, escape_col=3, mouse_type=None):
     df = pd.read_csv(file, header=None, low_memory=False)

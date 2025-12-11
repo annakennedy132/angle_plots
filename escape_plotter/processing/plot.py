@@ -5,11 +5,13 @@ import seaborn as sns
 
 from escape_plotter.utils import parse
 
-from scipy.stats import ttest_ind, linregress, t
+from scipy.stats import ttest_ind, linregress, t, skew, median_test, norm
 from scipy.ndimage import gaussian_filter, gaussian_filter1d
 from matplotlib import transforms
 from itertools import combinations
 import matplotlib.colors as mcolors
+from matplotlib.lines import Line2D
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 def plot_polar_chart(fig, ax, angles, bins, direction=-1, zero="E", show=False, close=True):
     valid_angles = []
@@ -104,8 +106,6 @@ def plot_coords(fig, ax, coords,
             mincnt=0
         )
 
-        if xlabel: ax.set_xlabel(xlabel)
-        if ylabel: ax.set_ylabel(ylabel)
         if xmin is not None and xmax is not None: ax.set_xlim(xmin, xmax)
         if ymin is not None and ymax is not None: ax.set_ylim(ymin, ymax)
 
@@ -139,8 +139,6 @@ def plot_coords(fig, ax, coords,
             aspect='equal'
         )
 
-        if xlabel: ax.set_xlabel(xlabel)
-        if ylabel: ax.set_ylabel(ylabel)
         ax.set_xlim(xmin, xmax)
         ax.set_ylim(ymin, ymax)
 
@@ -148,7 +146,10 @@ def plot_coords(fig, ax, coords,
             cb = fig.colorbar(img, ax=ax)
             cb.set_label("Frequency")
             cb.outline.set_visible(False)
-
+    
+    ax.set_xticks([])
+    ax.set_yticks([])
+    
     if show:
         plt.show()
     if close:
@@ -176,9 +177,6 @@ def time_plot(fig, ax, coordinates, cbar_dim=None, fps=30, xlim=None, ylim=(700,
         cbar.set_label('Time (s)')
         cbar.outline.set_visible(False)
 
-    ax.set_xlabel("x coordinates")
-    ax.set_ylabel("y coordinates")
-
     if xlim is not None:
         ax.set_xlim(xlim)
     if ylim is not None:
@@ -186,6 +184,8 @@ def time_plot(fig, ax, coordinates, cbar_dim=None, fps=30, xlim=None, ylim=(700,
 
     for spine in ax.spines.values():
         spine.set_visible(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
 
     if show:
         plt.show()
@@ -196,173 +196,155 @@ def time_plot(fig, ax, coordinates, cbar_dim=None, fps=30, xlim=None, ylim=(700,
 
 def regression_plot(fig, ax, x, y, label, color, x_label, y_label, title,
                     text_index=0, show=False, close=True,
-                    stats=True, scatter=False, annotate=False,
-                    csv_path=None, ci=0.95):
+                    stats=True, scatter=False, legend_loc='best', ci=0.95):
+    """
+    Plot regression line and optionally scatter points.
+    Prints slope stats and, if multiple groups are plotted on the same axes,
+    also prints pairwise slope difference tests automatically.
+    """
+    if not hasattr(ax, "_regression_results"):
+        ax._regression_results = []
+        ax._regression_header_printed = False
 
-    # Not enough data
-    if len(x) < 2 or len(y) < 2:
-        return None
-
-    # Drop NaNs pairwise
+    # --- drop NaNs ---
     pairs = [(a, b) for a, b in zip(x, y) if not (np.isnan(a) or np.isnan(b))]
     if len(pairs) < 2:
-        return None
-    x, y = map(list, zip(*pairs))
+        return
+    x, y = map(np.array, zip(*pairs))
     n = len(x)
 
-    # Linear regression
+    # --- regression ---
     res = linregress(x, y)
-    slope, intercept = res.slope, res.intercept
-    r_value, p_value, std_err = res.rvalue, res.pvalue, res.stderr
-    r_squared = r_value ** 2
+    slope, intercept, r_value, p_value, std_err = res.slope, res.intercept, res.rvalue, res.pvalue, res.stderr
+    r2 = r_value ** 2
 
-    # CI for slope
-    slope_ci_low = slope_ci_high = None
-    if stats and n > 2 and np.isfinite(std_err):
-        alpha = 1.0 - ci
-        tcrit = t.ppf(1 - alpha/2.0, df=n - 2)
-        slope_ci_low = slope - tcrit * std_err
-        slope_ci_high = slope + tcrit * std_err
+    # --- slope CI ---
+    ci_low = ci_high = None
+    if n > 2 and np.isfinite(std_err):
+        alpha = 1 - ci
+        tcrit = t.ppf(1 - alpha/2, df=n - 2)
+        ci_low, ci_high = slope - tcrit * std_err, slope + tcrit * std_err
+    else:
+        tcrit = None
 
-    # Plot regression (points optional)
+    # --- plot ---
     sns.regplot(
-        x=x, y=y, ax=ax,
-        scatter=scatter,
-        scatter_kws={'color': color, 'alpha': 0.7, 's': 10} if scatter else None,
+        x=x,
+        y=y,
+        ax=ax,
+        scatter=False,                 # <- no scatter here
         line_kws={'color': color},
-        label=label
+        label=label                    # <- legend will show a line
     )
 
-    # Optional on-figure text (off by default)
-    if annotate:
-        y_pos = 0.5 - 0.08 * text_index
-        ax.text(
-            0.95, y_pos,
-            f"{label}: slope={slope:.2f} $r^2$={r_squared:.2f}, p={p_value:.3g}",
-            transform=ax.transAxes,
-            ha='right', va='center', fontsize=8, color='black',
-            bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.3')
+    # --- optional scatter on top, but no legend label ---
+    if scatter:
+        ax.scatter(
+            x, y,
+            color=color,
+            alpha=0.7,
+            s=10
         )
 
-    # Labels/title/cleanup
+    print(f"{label}: slope={slope:.2f} r2={r2:.2f}, p={p_value:.3g}")
+
+    # --- format axes ---
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_title(title)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.legend(loc='center left')
+    ax.legend(loc=legend_loc, fontsize='x-small', frameon=False)
+
+    # --- pretty printing (fallback to "y vs x" if no title) ---
+    if stats:
+        # choose header label
+        if isinstance(title, str) and title.strip():
+            header_title = title.strip()
+        else:
+            header_title = f"{y_label} vs {x_label}"
+
+        # print header once per axis
+        if not ax._regression_header_printed:
+            print(f"\n=== Regression stats: {header_title} ===")
+            print("Label          n    Slope      95% CI slope          Intercept    r^2      p")
+            print("-" * 80)
+            ax._regression_header_printed = True
+
+        # CI as string
+        if ci_low is not None:
+            ci_str = f"({ci_low:7.3f}, {ci_high:7.3f})"
+        else:
+            ci_str = " " * 21
+
+        # row
+        print(f"{label:12s}  {n:3d}  {slope:7.3f}  {ci_str:21s}  {intercept:9.3f}  {r2:5.3f}  {p_value:7.3g}")
+
+    # --- store for later pairwise comparison ---
+    ax._regression_results.append({
+        'label': label, 'slope': slope, 'se': std_err,
+        'ci_low': ci_low, 'ci_high': ci_high, 'tcrit': tcrit
+    })
+
+    # --- when figure is closed, print slope comparisons (neater) ---
+    if close:
+        results = ax._regression_results
+        if len(results) > 1:
+            if isinstance(title, str) and title.strip():
+                comparison_title = title.strip()
+            else:
+                comparison_title = f"{y_label} vs {x_label}"
+
+            print(f"\n--- Pairwise slope comparisons: {comparison_title} ---")
+            print("Group A        Group B        ΔSlope     z        p")
+            print("-" * 60)
+
+            for i in range(len(results)):
+                for j in range(i + 1, len(results)):
+                    a, b = results[i], results[j]
+
+                    # fallback SE from CI if needed
+                    if a['se'] is not None and np.isfinite(a['se']):
+                        se1 = a['se']
+                    elif (a['ci_high'] is not None and a['ci_low'] is not None
+                          and a['tcrit'] not in (None, 0)):
+                        se1 = (a['ci_high'] - a['ci_low']) / (2 * a['tcrit'])
+                    else:
+                        se1 = np.nan
+
+                    if b['se'] is not None and np.isfinite(b['se']):
+                        se2 = b['se']
+                    elif (b['ci_high'] is not None and b['ci_low'] is not None
+                          and b['tcrit'] not in (None, 0)):
+                        se2 = (b['ci_high'] - b['ci_low']) / (2 * b['tcrit'])
+                    else:
+                        se2 = np.nan
+
+                    if not (np.isfinite(se1) and np.isfinite(se2)):
+                        continue
+
+                    z = (a['slope'] - b['slope']) / np.sqrt(se1**2 + se2**2)
+                    p = 2 * (1 - norm.cdf(abs(z)))
+                    print(f"{a['label']:12s}  {b['label']:12s}  {a['slope']-b['slope']:7.3f}  {z:6.3f}  {p:7.3g}")
+            print("\n")
+
+        plt.close(fig)
 
     if show:
         plt.show()
-    if close:
-        plt.close(fig)
 
-    # Return fig + stats dict (or None if stats=False)
-    return fig, #stats_row
+    return fig, ax
 
-def cmap_plot(fig, axes, data1, data2=None, sort_data1=None, sort_data2=None, title1="", title2="", ylabel="", ylim=None, 
-              cbar_label="", length=0, cmap="viridis", fps=30, vmin=100, vmax=600, cbar_dim=(0.93, 0.11, 0.015, 0.53), smooth=False, norm=False,):
-
-    # Normalize inputs / safe defaults
-    data1 = data1 or []
-    data2 = data2 or []
-    sort_data1 = sort_data1 or list(range(len(data1)))
-    sort_data2 = sort_data2 or list(range(len(data2)))
-    title1 = title1 or ""
-    title2 = title2 or ""
-    ylabel = ylabel or ""
-
-    if len(sort_data1) != len(data1):
-        sort_data1 = list(range(len(data1)))
-    if len(sort_data2) != len(data2):
-        sort_data2 = list(range(len(data2)))
-
-    # ---- BOTH SIDES ----
-    if data1 and data2:
-        # Expect a 2x2 axes grid
-        try:
-            _ = axes[1, 1]
-        except Exception:
-            raise ValueError("For two datasets, 'axes' must be a 2x2 array of axes.")
-
-        def avg_over_trials(trials, L):
-            return [
-                np.nanmean([lst[i] if i < len(lst) else np.nan for lst in trials])
-                for i in range(L)
-            ]
-
-        max_len_1 = max(map(len, data1)) if data1 else 0
-        max_len_2 = max(map(len, data2)) if data2 else 0
-        num_frames = max(max_len_1, max_len_2)
-
-        avg_data_1 = avg_over_trials(data1, max_len_1)
-        avg_data_2 = avg_over_trials(data2, max_len_2)
-
-        if norm:
-            frame_time = 1.0 / max(1, num_frames)
-            x_ticks = np.linspace(0, num_frames, 3, dtype=int)
-            x_labels = x_ticks * frame_time
-        else:
-            frame_time = 1.0 / max(1, fps)
-            x_ticks = np.linspace(0, num_frames, 5, dtype=int)
-            x_labels = (x_ticks * frame_time) - 5
-
-        if smooth and avg_data_1:
-            avg_data_1 = gaussian_filter1d(avg_data_1, sigma=10)
-        axes[0, 0].plot(avg_data_1, color="red")
-        axes[0, 0].set_title(title1)
-        axes[0, 0].set_ylabel(ylabel)
-        axes[0, 0].set_ylim(ylim)
-        for s in ("left", "right", "top", "bottom"):
-            axes[0, 0].spines[s].set_visible(False)
-        axes[0, 0].get_xaxis().set_visible(False)
-
-        if smooth and avg_data_2:
-            avg_data_2 = gaussian_filter1d(avg_data_2, sigma=10)
-        axes[0, 1].plot(avg_data_2, color="red")
-        axes[0, 1].set_title(title2)
-        axes[0, 1].set_ylim(ylim)
-        for s in ("left", "right", "top", "bottom"):
-            axes[0, 1].spines[s].set_visible(False)
-        axes[0, 1].get_xaxis().set_visible(False)
-
-        sorted_data_1 = [d for _, d in sorted(zip(sort_data1, data1))]
-        sorted_data_2 = [d for _, d in sorted(zip(sort_data2, data2))]
-
-        sns.heatmap(sorted_data_1, ax=axes[1, 0], cmap=cmap, cbar=False, vmin=vmin, vmax=vmax)
-        axes[1, 0].set_ylabel("Trial")
-        if not norm:
-            axes[1, 0].axvline(150, color="white", linewidth=2)
-        axes[1, 0].set_yticks([])
-        axes[1, 0].set_xticks(x_ticks)
-        axes[1, 0].set_xticklabels(x_labels)
-
-        sns.heatmap(sorted_data_2, ax=axes[1, 1], cmap=cmap, cbar=False, vmin=vmin, vmax=vmax)
-        axes[1, 1].set_ylabel("Trial")
-        if not norm:
-            axes[1, 1].axvline(150, color="white", linewidth=2)
-        axes[1, 1].set_yticks([])
-        axes[1, 1].set_xticks(x_ticks)
-        axes[1, 1].set_xticklabels(x_labels)
-
-        # Colorbar (avoid shadowing the 'norm' arg)
-        norm_ = plt.Normalize(vmin=vmin, vmax=vmax)
-        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm_)
-        cbar_ax = fig.add_axes(cbar_dim)
-        cbar = fig.colorbar(sm, cax=cbar_ax)
-        cbar.set_label(cbar_label, rotation=270, labelpad=10)
-        cbar.outline.set_visible(False)
-
-        return fig, axes
-
-    # ---- LEFT ONLY ----
-    elif data1 and not data2:
-        # Expect a 1D axes container of length 2
-        try:
-            _ = axes[1]
-        except Exception:
-            raise ValueError("For one dataset, 'axes' must be a list/array of length 2: [top_ax, bottom_ax].")
-
+def cmap_plot_with_average(
+    fig, axes, data1, data2=None,
+    sort_data1=None, sort_data2=None,
+    title1="", title2="", ylabel="", ylim=None, 
+    cbar_label="", length=0, cmap="viridis", fps=30,
+    vmin=100, vmax=600, cbar_dim=(0.93, 0.11, 0.015, 0.53),
+    smooth=False, norm=False,
+    add_cbar=True
+):
+    
         max_len = max(map(len, data1)) if data1 else 0
         avg_data = [
             np.nanmean([lst[i] if i < len(lst) else np.nan for lst in data1])
@@ -384,11 +366,12 @@ def cmap_plot(fig, axes, data1, data2=None, sort_data1=None, sort_data2=None, ti
         x_ticks = np.linspace(0, num_frames, 3, dtype=int)
         x_labels = x_ticks * frame_time
 
-        sns.heatmap(
+        # --- IMPORTANT: keep handle to the heatmap QuadMesh ---
+        hm = sns.heatmap(
             data1_sorted,
             ax=axes[1],
             cmap=cmap,
-            cbar=False,
+            cbar=False,      # <- no auto-cbar here
             vmin=vmin,
             vmax=vmax,
         )
@@ -397,21 +380,62 @@ def cmap_plot(fig, axes, data1, data2=None, sort_data1=None, sort_data2=None, ti
             spine.set_color("black")
             spine.set_linewidth(1.5)
 
-        axes[1].set_title(title1)
         axes[1].set_ylabel("Trial")
         axes[1].set_xticks(x_ticks)
         axes[1].set_xticklabels(x_labels)
         axes[1].set_yticks([])
-        axes[1].set_xlabel(f"Normalised Time (last {length / max(1, fps):.0f}s of escape)")
-
-        norm_ = plt.Normalize(vmin=vmin, vmax=vmax)
-        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm_)
-        cbar_ax = fig.add_axes(cbar_dim)
-        cbar = fig.colorbar(sm, cax=cbar_ax)
-        cbar.set_label(cbar_label, rotation=270, labelpad=10)
-        cbar.outline.set_visible(False)
+        axes[1].set_xlabel("Normalised Time")
+        
+        if add_cbar:
+            norm_ = plt.Normalize(vmin=vmin, vmax=vmax)
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm_)
+            cbar_ax = inset_axes(axes[1], width="7%", height="100%", loc="right", 
+                                 bbox_to_anchor=(0.2, 0., 1, 1), bbox_transform=axes[1].transAxes, borderpad=0)
+            cbar = fig.colorbar(sm, cax=cbar_ax)
+            cbar.set_label(cbar_label, rotation=270, labelpad=10)
+            cbar.outline.set_visible(False)
 
         return fig, axes
+    
+def cmap_plot(fig, ax, data, sort_data=None, title="", ylabel="", xlabel="",
+              cbar_label="", cmap="viridis", fps=30,
+              vmin=100, vmax=600, norm=False, show=False, close=True):
+
+    # sort trials
+    sort_data = sort_data or list(range(len(data)))
+    sorted_data_1 = [d for _, d in sorted(zip(sort_data, data))]
+
+    # x-axis in seconds
+    num_frames = len(data[0])          # assuming data is (trials, frames)
+    frame_time = 1.0 / max(1, fps)
+    x_ticks = np.linspace(0, num_frames, 5, dtype=int)
+    x_labels = (x_ticks * frame_time) - 5
+
+    # heatmap
+    im = sns.heatmap(sorted_data_1, ax=ax, cmap=cmap, cbar=False,
+                     vmin=vmin, vmax=vmax)
+
+    ax.set_ylabel(ylabel)
+    if not norm:
+        ax.axvline(150, color="white", linewidth=2)
+
+    ax.set_yticks([])
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(x_labels)
+    ax.set_title(title)
+    ax.set_xlabel(xlabel, fontsize=10)
+
+    # individual colorbar for this axes
+    cbar = fig.colorbar(im.collections[0], ax=ax)
+    cbar.set_label(cbar_label, rotation=270, labelpad=10)
+    cbar.outline.set_visible(False)
+    
+    if show:
+        plt.show()
+    if close:
+        plt.close()
+
+    return fig, ax
 
 def scatter_plot_with_stats(fig, ax,coords, point_color='darkgrey', mean_marker='o', x_limits=None, y_limits=None, show=False, close=True):
 
@@ -445,13 +469,15 @@ def scatter_plot_with_stats(fig, ax,coords, point_color='darkgrey', mean_marker=
     ax.spines['top'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
 
     return fig, ax
 
 def plot_bar(fig, ax, data_groups, x_label, y_label, bar_labels,
              colors, ylim=None, bar_width=0.1, points=False, 
              log_y=False, error_bars=False, show=False, close=True, 
-             title=None, stats=True, comparisons=None):
+             title=None, stats=True, comparisons=None, equal_var=False):
 
     num_groups = len(data_groups)
     means = [np.nanmean(group) for group in data_groups]
@@ -468,8 +494,7 @@ def plot_bar(fig, ax, data_groups, x_label, y_label, bar_labels,
             color=colors[i],
             yerr=stds[i] if error_bars else None,
             error_kw=dict(ecolor=colors[i], capsize=5),
-            alpha=1
-        )
+            alpha=1)
         if points:
             xi = np.full_like(np.asarray(data_groups[i], dtype=float), x_positions[i], dtype=float)
             ax.scatter(xi, data_groups[i], color=colors[i], s=10)
@@ -478,7 +503,7 @@ def plot_bar(fig, ax, data_groups, x_label, y_label, bar_labels,
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_xticks(x_positions)
-    ax.set_xticklabels(bar_labels)
+    ax.set_xticklabels(bar_labels, rotation=45, fontsize='small')
 
     # Y scale/limits
     if ylim is not None:
@@ -516,7 +541,7 @@ def plot_bar(fig, ax, data_groups, x_label, y_label, bar_labels,
             # Welch's t-test
             stat, p_val = ttest_ind(
                 data_groups[i], data_groups[j],
-                equal_var=False, nan_policy='omit'
+                equal_var=equal_var, nan_policy='omit'
             )
 
             if p_val < 0.001:
@@ -536,12 +561,12 @@ def plot_bar(fig, ax, data_groups, x_label, y_label, bar_labels,
 
             # Horizontal line (y in axes coords)
             ax.plot([x0, x1], [y_here, y_here],
-                    transform=trans, clip_on=False, lw=0.8, color='black')
+                    transform=trans, clip_on=False, lw=0.6, color='black')
 
             # Centered text above the line (y in axes coords)
-            ax.text((x0 + x1) / 2.0, y_here + 0.02, sig_label,
+            ax.text((x0 + x1) / 2.0, y_here, sig_label,
                     transform=trans, clip_on=False,
-                    ha='center', va='bottom', fontsize=10)
+                    ha='center', va='bottom', fontsize=6)
 
         # Restore original limits explicitly (belt-and-braces)
         ax.set_ylim(orig_ylim)
@@ -555,7 +580,7 @@ def plot_bar(fig, ax, data_groups, x_label, y_label, bar_labels,
     return fig, ax
 
 def plot_grouped_bar(fig, ax, grouped_data, xticks, labels, colors,
-                     bar_width=0.2, error_bars=False, log_y=False, ylim=(0, None), y_label=None,
+                     bar_width=0.2, error_bars=False, log_y=False, ylim=(0, None), y_label=None, legend_loc='best',
                      show=False, close=True):
     """
     Plots grouped bar chart with two bars per group.
@@ -586,17 +611,17 @@ def plot_grouped_bar(fig, ax, grouped_data, xticks, labels, colors,
 
         ax.bar(x1, mean1, bar_width, color=base,
                yerr=std1 if error_bars else None,
-               error_kw=dict(ecolor=base, capsize=5) if error_bars else None)
+               error_kw=dict(ecolor=base, capsize=5) if error_bars else {})
         ax.bar(x2, mean2, bar_width, color=lighter,
                yerr=std2 if error_bars else None,
-               error_kw=dict(ecolor=lighter, capsize=5) if error_bars else None)
+               error_kw=dict(ecolor=lighter, capsize=5) if error_bars else {})
 
     if ylim is not None:
         ax.set_ylim(ylim)
 
     ax.set_xticks(x_centers)
-    ax.set_xticklabels(xticks)
-    ax.legend(labels, loc='best', fontsize="x-small")
+    ax.set_xticklabels(xticks, rotation=45, fontsize='small')
+    ax.legend(labels, loc=legend_loc, fontsize='x-small', frameon=False)
 
     if log_y:
         ax.set_yscale("log")
@@ -614,12 +639,12 @@ def plot_grouped_bar(fig, ax, grouped_data, xticks, labels, colors,
 
     return fig, ax
 
-def plot_speed_timecourses(
+def plot_timecourse(
     fig, ax, speeds_by_type, mouse_types, color=None,
     frame_time=None,
     title="",
     x_label=None, y_label="", ylim=(0, None),
-    alpha_fill=0.25, linewidth=1.8,
+    alpha_fill=0.25, linewidth=1.8, legend_loc='upper left',
     smooth=None,
     shade=True, show=False, close=True):
 
@@ -653,7 +678,7 @@ def plot_speed_timecourses(
         n = len(mouse_types)
         base_color = color
         colors = [base_color for _ in range(n)]
-        alphas = np.linspace(1.0, 0.5, n)
+        alphas = np.linspace(1.0, 0.2, n)
     
     # smoothing kernel (if requested)
     if smooth is not None and smooth > 0:
@@ -714,7 +739,7 @@ def plot_speed_timecourses(
     ax.set_title(title)
     ax.set_xlabel(x_label or default_x_label)
     ax.set_ylabel(y_label)
-    ax.legend(frameon=False)
+    ax.legend(mouse_types, loc=legend_loc, fontsize='x-small', frameon=False)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.set_ylim(ylim)
@@ -725,24 +750,104 @@ def plot_speed_timecourses(
         plt.close()
     return fig, ax
 
+def plot_histogram(
+    fig, ax, data_list, labels, colors,
+    bins=20, xlabel="Value", ylabel="Frequency (%)",
+    show_median=True, xlim=None, alpha=0.45,
+    show=False, close=True, print_skew=True
+):
+    rng = np.random.default_rng(0)  # reproducible bootstraps
+    stats = {}
 
-def plot_histogram(fig, ax, data_list, labels, colors, bins=20, xlabel="Value",
-                    ylabel="Frequency (%)", show_median=True, xlim=None, alpha=0.45,
-                    show=False, close=True):
-    
+    all_data = np.concatenate([
+        np.asarray(d, dtype=float)[~np.isnan(d)]
+        for d in data_list if d is not None and len(d) > 0
+    ]) if any(data_list) else np.array([])
+
+    bin_edges = np.histogram_bin_edges(all_data, bins=bins)
+    group_stats = []
+
+    # store medians (and colors) so we can label later
+    medians = []
+    median_colors = []
+
     for data, label, color in zip(data_list, labels, colors):
         if data is None or len(data) == 0:
             continue
-        data = np.asarray(data)
+        data = np.asarray(data, dtype=float)
+        data = data[~np.isnan(data)]
+        if len(data) == 0:
+            continue
+
         weights = np.ones_like(data) * 100 / len(data)
-        ax.hist(data, bins=bins, weights=weights, color=color, alpha=alpha, label=label)
+        ax.hist(data, bins=bin_edges, weights=weights,
+                color=color, alpha=alpha, label=label)
+
+        med = np.median(data)
+        boot = [np.median(rng.choice(data, size=len(data), replace=True)) for _ in range(2000)]
+        ci_low, ci_high = np.percentile(boot, [2.5, 97.5])
+        sk = skew(data, nan_policy='omit')
+
+        group_stats.append({
+            "label": label,
+            "n": len(data),
+            "median": med,
+            "ci_low": ci_low,
+            "ci_high": ci_high,
+            "skew": sk,
+        })
 
         if show_median:
-            median_val = np.median(data)
-            ax.axvline(median_val, linestyle="--", color=color, linewidth=1.5)
-            y_top = ax.get_ylim()[1]
-            ax.text(median_val, y_top * 1.02, f"{median_val:.2f}",
-                    ha="center", va="bottom", fontsize=8, color="black", rotation=60)
+            ax.axvline(med, linestyle="--", color=color, linewidth=1.5)
+            medians.append(med)
+            median_colors.append(color)
+
+    # ----- place ALL median labels AFTER axes limits are final -----
+    if show_median and medians:
+        # x in data coords, y in axes coords (0–1)
+        transform = ax.get_xaxis_transform()
+        for med, color in zip(medians, median_colors):
+            ax.text(
+                med, 1.02, f"{med:.2f}",   # 2% above top, SAME for all
+                transform=transform,
+                ha="center", va="bottom",
+                fontsize=8, color="black",
+                rotation=70,
+                clip_on=False,            # don't clip at top
+            )
+
+    # --- stats printing (unchanged) ---
+    if print_skew and group_stats:
+        header_title = xlabel
+        print(f"\n=== Histogram group stats: {header_title} ===")
+        print("Group         n    Median    95% CI median         Skew")
+        print("-" * 80)
+        for gs in group_stats:
+            ci_str = f"({gs['ci_low']:7.3f}, {gs['ci_high']:7.3f})"
+            print(f"{gs['label']:12s}  {gs['n']:3d}  {gs['median']:7.3f}  "
+                  f"{ci_str:21s}  {gs['skew']:7.3f}")
+        print("\n")
+
+    # ... rest of your function unchanged ...
+    valid_data = []
+    for lbl, dat in zip(labels, data_list):
+        if dat is None or len(dat) == 0:
+            continue
+        arr = np.asarray(dat, dtype=float)
+        arr = arr[~np.isnan(arr)]
+        if len(arr) == 0:
+            continue
+        valid_data.append((lbl, arr))
+
+    if len(valid_data) > 1:
+        print("\n--- Pairwise Median Tests (Mood’s) ---")
+        print("Group A       Group B       p-value    Common median")
+        print("-" * 60)
+        for (l1, d1), (l2, d2) in combinations(valid_data, 2):
+            stat, p, common_med, table = median_test(d1, d2)
+            print(f"{l1:12s}  {l2:12s}  {p:8.4f}    {common_med:7.3f}")
+            stats[(l1, l2)] = {"p_median_test": p, "common_median": common_med}
+        print("\n")
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -750,20 +855,22 @@ def plot_histogram(fig, ax, data_list, labels, colors, bins=20, xlabel="Value",
         ax.set_xlim(*xlim)
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
-    ax.legend()
+
+    handles = [Line2D([0], [0], color=c, linestyle='-', linewidth=2) for c in colors]
+    ax.legend(handles, labels, loc='best', fontsize='x-small', frameon=False)
+
     plt.tight_layout()
-    
+
     if show:
         plt.show()
     if close:
         plt.close()
-        
+
     return fig, ax
 
 def plot_pie_chart(fig, ax, data, title=None, labels=None, colors=None, autopct='%1.1f%%'):
     
-
-    # Prepare data and labels
+    # --- data & labels ---
     if isinstance(data, dict):
         labels = list(data.keys())
         values = list(data.values())
@@ -772,33 +879,65 @@ def plot_pie_chart(fig, ax, data, title=None, labels=None, colors=None, autopct=
         if labels is None:
             labels = [f"Value {i+1}" for i in range(len(values))]
 
+    n = len(values)
+
+    # --- color handling (similar spirit to plot_timecourse) ---
+    # allow colors to be a single string or a list
+    if isinstance(colors, (list, tuple)) and len(colors) > 1:
+        pie_colors = colors[:n]
+        alphas = None  # use default alpha = 1 for all
+    else:
+        # single base color (string or 1-element list)
+        base_color = colors[0] if isinstance(colors, (list, tuple)) else colors
+        # same base color for all wedges
+        pie_colors = [base_color] * n
+        # different alphas for each wedge (e.g. 1.0 -> 0.2)
+        alphas = np.linspace(1.0, 0.2, n)
+
     wedges, _, autotexts = ax.pie(
         values,
-        labels=None,  # legend handles labels
+        labels=None,           # legend handles labels
         autopct=autopct,
-        colors=colors[:len(values)] if colors else None,
-        startangle=90)
+        colors=pie_colors,
+        startangle=90
+    )
 
+    # --- apply per-wedge alpha after the fact (no RGBA, no to_rgba) ---
+    if alphas is not None:
+        for w, a in zip(wedges, alphas):
+            w.set_alpha(a)
+
+    # --- legend & labels ---
     ax.legend(
         wedges, labels,
-        title="Categories",
         loc="center left",
-        bbox_to_anchor=(1, 0.5))
-
+        frameon=False,
+        bbox_to_anchor=(1, 0.5),
+        fontsize='x-small'
+    )
     for t in autotexts:
         t.set_color("black")
         t.set_fontsize(10)
 
-    if title:
-        ax.set_title(title)
-
-    ax.axis("equal")  # perfect circle
+    ax.axis("equal")
+    ax.set_title(title or "", fontsize=10)
     plt.tight_layout()
+
     return fig, ax
 
-def plot_trial_grid_paths(before_trials, stim_trials, *,
-    title="", drawer=None, areas=None, scores=None,
-    show_lines=False,  max_lines=20, self_obj=None):
+def plot_trial_grid_paths(
+    before_trials, 
+    stim_trials, 
+    *,
+    title="",
+    drawer=None,
+    areas=None,
+    scores=None,
+    show_lines=False,
+    max_lines=450,
+    x_tolerance=30,   # <-- NEW: only match before-points within this Δx
+    self_obj=None
+):
     """
     Plot per-trial before/stim paths in a grid.
 
@@ -811,6 +950,12 @@ def plot_trial_grid_paths(before_trials, stim_trials, *,
         Used by drawer or to annotate panels.
     show_lines : bool
         If True, draw up to `max_lines` closest-point lines from stim→before.
+    max_lines : int
+        Maximum number of connection lines per trial.
+    x_tolerance : float or None
+        If not None, only consider before-points whose x-coordinate is
+        within ±x_tolerance of the stim point's x (same units as paths,
+        typically pixels).
     self_obj : object
         Optional, if you want to auto-append fig to self.imgs.
     """
@@ -855,21 +1000,51 @@ def plot_trial_grid_paths(before_trials, stim_trials, *,
         else:
             # default simple plot
             ax.plot(before[:, 0], before[:, 1], color="grey")
-            ax.plot(stim[:, 0], stim[:, 1], color="blue")
+            ax.plot(stim[:, 0],   stim[:, 1],   color="blue")
 
             if show_lines:
-                b_rev = before[::-1]
-                idxs = np.linspace(0, len(stim) - 1, min(max_lines, len(stim)), dtype=int)
+                # connect sampled stim points to their closest before points,
+                # optionally restricted by x_tolerance
+                b_arr = before  # use full array, no removal
+                idxs = np.linspace(
+                    0, len(stim) - 1,
+                    min(max_lines, len(stim)),
+                    dtype=int
+                )
+
                 for idx in idxs:
-                    e = stim[idx]
-                    dists = np.sum((b_rev - e)**2, axis=1)
-                    b = b_rev[np.argmin(dists)]
-                    ax.plot([e[0], b[0]], [e[1], b[1]], color="red", alpha=0.3, lw=0.5)
+                    e = stim[idx]  # (x, y) of escape/stim point
+
+                    # filter candidates by x_tolerance if requested
+                    if x_tolerance is not None:
+                        mask = np.abs(b_arr[:, 0] - e[0]) <= x_tolerance
+                        candidates = b_arr[mask]
+                        if len(candidates) == 0:
+                            candidates = b_arr
+                        
+                    # squared distances to candidate before points
+                    dists = np.sum((candidates - e) ** 2, axis=1)
+                    k = int(np.argmin(dists))
+                    b = candidates[k]
+
+                    # draw connection line
+                    ax.plot(
+                        [e[0], b[0]], [e[1], b[1]],
+                        color="red", alpha=0.3, lw=0.5
+                    )
 
             if scores and j < len(scores):
-                ax.text(0.05, 0.95, f"{scores[j]:.2f}", transform=ax.transAxes,
-                        fontsize=8, color="red", va="top", ha="left",
-                        bbox=dict(facecolor="white", alpha=0.7, edgecolor="none", boxstyle="round,pad=0.3"))
+                ax.text(
+                    0.05, 0.95, f"{scores[j]:.2f}",
+                    transform=ax.transAxes,
+                    fontsize=8, color="red", va="top", ha="left",
+                    bbox=dict(
+                        facecolor="white", alpha=0.7,
+                        edgecolor="none", boxstyle="round,pad=0.3"
+                    )
+                )
 
     plt.close(fig)
     return fig, axs
+
+

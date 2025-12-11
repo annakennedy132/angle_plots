@@ -23,17 +23,28 @@ def create_folder(base_folder, name, append_date=True):
     os.mkdir(new_folder)
     return new_folder
 
-def create_csv(list, filename):
-    
-    with open(filename, 'w', newline='') as file:
-        
-        writer = csv.writer(file)
-        
-        for row in list:
-            if row[1] is None:
-                row = [row[0], "None", "None"]
-            writer.writerow(row)
+def create_csv(data, filepath, columns=None):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    max_len = max(map(len, data))
+    rows = zip(*[list(col) + [None]*(max_len - len(col)) for col in data])
 
+    with open(filepath, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        if columns: writer.writerow(columns)
+        writer.writerows([[v for v in row] for row in rows])
+
+def create_trial_csv(trials_by_type, event_ids_by_type, mouse_types, filepath):
+
+    cols = []       # each element is a full column (mouse_type, event_id, trial frames...)
+    col_names = []  # names for each column
+
+    for mt, trials, ids in zip(mouse_types, trials_by_type, event_ids_by_type):
+        for trial, eid in zip(trials, ids):
+            col = [mt, eid] + list(trial)
+            cols.append(col)
+
+    create_csv(cols, filepath, columns=col_names)
+        
 def save_report(figs, base_path, title=None):
     if title:
         report_path = f"{base_path}_{title}_report.pdf"

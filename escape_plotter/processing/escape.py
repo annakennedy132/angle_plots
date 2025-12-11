@@ -92,14 +92,36 @@ def find_escape_index(column_data, min_escape_frames=5, exit_roi=(700, 300, 800,
 
     return escape_index
 
-def is_nest_frame(p, roi):
-    x1, y1, x2, y2 = roi
-    try:
-        # Try treating as (x,y)
-        x, y = p
+def nest_mask_from_coords(trial_coords, exit_roi):
+    """
+    trial_coords : (N, 2) array-like of (x, y) or NaNs
+    exit_roi     : (x1, y1, x2, y2)
+
+    A frame counts as 'nest' iff:
+      - its coordinate is NaN, AND
+      - the last *non-NaN* coordinate before it was inside exit_roi.
+    """
+    x1, y1, x2, y2 = exit_roi
+    arr = np.asarray(trial_coords, dtype=float)
+
+    if arr.ndim != 2 or arr.shape[1] != 2:
+        raise ValueError("nest_mask_from_coords expects (N, 2) coords")
+
+    N = len(arr)
+    mask = np.zeros(N, dtype=bool)
+
+    last_valid_inside = False  # was the last non-NaN coord inside ROI?
+
+    for i in range(N):
+        x, y = arr[i]
+
         if np.isnan(x) or np.isnan(y):
-            return True
-        return (x1 <= x <= x2) and (y1 <= y <= y2)
-    except Exception:
-        # Scalar-like
-        return bool(np.isnan(p))
+            # NaN frame: it's 'nest' only if last valid point was in the exit ROI
+            if last_valid_inside:
+                mask[i] = True
+            # do NOT reset last_valid_inside here; we keep the last valid coord
+        else:
+            # Valid coordinate: update where the animal currently is
+            last_valid_inside = (x1 <= x <= x2) and (y1 <= y <= y2)
+
+    return mask
